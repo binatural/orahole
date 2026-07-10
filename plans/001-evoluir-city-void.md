@@ -11,8 +11,8 @@
 >
 > O estado usado para este plano possui os hashes:
 >
-> - `index.html`: `6B1947C66994199CD9E33412CC4CCAA9772B5DD839D42272197EBC67B9D1B22C`
-> - `DESIGN.md`: `1284B9335E0D72A87802CD6B5EBDC3A7265F89629502F061A570BFDBEAD6D086`
+> - `index.html`: `0E446E5C19F7775C59F30F2813210675B424D22F46C3E39F7572DBAC2CDF1E75`
+> - `DESIGN.md`: `A6E91A7AB9367C2F0E5AC1D90BB168D093BC0D71C0249A8196476F8F87C7FD81`
 >
 > Se os hashes forem diferentes antes da primeira alteração, compare o código atual com os trechos em “Estado atual”. Se funções ou constantes citadas tiverem mudado, PARE e peça atualização do plano.
 
@@ -30,19 +30,21 @@
 - **Etapa 1 concluída em 2026-07-10:** configurações centralizadas, paleta vibrante documentada, névoa distante, iluminação com maior contraste, materiais toon, perfis visual alto/móvel e geometrias compartilhadas.
 - **Etapa 2 concluída em 2026-07-10:** `SpatialGrid`, consultas locais para absorção e bots, `CANNON.SAPBroadphase`, métricas `?debug=1`, limite/reuso de partículas e verificação de desempenho.
 - **Etapa 3 concluída em 2026-07-10:** câmera ancorada ao jogador, zoom proporcional ao raio, amortecimento independente de FPS, raycasting móvel e luz/sombras acompanhando o jogador.
-- **Etapa 4 concluída em 2026-07-10:** mundo `180×180`, cinco bairros, 350 objetos, catálogo de 30 tipos, progressão por raio mínimo, novas sementes, modelos compartilhados e água no limite externo.
+- **Etapa 4 concluída em 2026-07-10:** mundo `180×180`, cinco bairros, 520 objetos, catálogo de 36 tipos, progressão por raio mínimo, novas sementes, modelos compartilhados e água no limite externo.
 - **Etapa 5 concluída em 2026-07-10:** PvP com vantagem mínima de 15%, bônus limitado, penalidade de crescimento, animação de derrota, renascimento seguro em 3 segundos e proteção branca por 2 segundos.
 - **Etapa 6 concluída em 2026-07-10:** cinco personalidades, estados `FORAGE/HUNT/FLEE/WANDER`, prioridade de fuga, reservas de alvo, separação entre bots e intervalo mínimo entre decisões.
 - **Etapa 7 concluída em 2026-07-10:** minimapa, feed de eliminações, anéis de alvo/ameaça, seta de perigo, próximo desbloqueio, tráfego, pedestres, barcos, vegetação, rodas, aura e sucção aprimorada.
 - **Etapa 8 concluída em 2026-07-10:** perfis `HIGH/MEDIUM/LOW`, seleção inicial por capacidade, redução automática após 4 segundos abaixo de 30 FPS, limites dinâmicos de sombras/pixel ratio/partículas e listas dedicadas de entidades animadas.
+- **Refinamento visual concluído em 2026-07-10:** skyline com hotéis, apartamentos e torres comerciais, modelos mais suaves, fachadas detalhadas, 174 pessoas visíveis e densidade elevada para 520 objetos.
 - **Próxima ação:** iniciar pela Etapa 9, ganchos de teste e verificação completa. Não repetir as Etapas 1–8.
 - **Verificação registrada:** 59 FPS em desktop e 60 FPS em perfil móvel no ambiente de teste, sem erros de console; busca espacial com média de 1 candidato para aproximadamente 90 objetos ativos.
 - **Verificação da câmera:** raio `1,9 → 6` alterou altura/distância de `38,4/37,3 → 63,0/66,0`; quatro extremos permaneceram enquadrados; mouse e toque moveram o jogador sem erros.
-- **Verificação da cidade:** todos os bairros atingiram suas metas (`72/78/70/82/48`), 30 tipos apareceram, reinício mudou a semente e recriou 350 objetos, progressão bloqueou prédio para raio pequeno e liberou no raio exigido; 59–60 FPS sem erros.
+- **Verificação da cidade:** todos os bairros atingiram suas metas (`105/130/100/110/75`), 36 tipos apareceram, reinício muda a semente e recria 520 objetos; 18 prédios altos e 174 pessoas foram contabilizados.
 - **Verificação PvP:** maior engoliu menor; menor e vantagem de 10% foram bloqueados; proteção bloqueou colisão; bônus inicial foi 20; crescimento da vítima caiu 35%; contagem real passou `3 → 2 → renascimento`, com proteção ativa e layout móvel sem overflow.
 - **Verificação da IA:** teste local com as bibliotecas cacheadas confirmou cinco personalidades, estados de fuga, caça, coleta e exploração, separação não nula, 58 FPS em perfil móvel e nenhum erro. Reavaliações receberam intervalo mínimo de 160 ms para evitar uso excessivo.
 - **Verificação do feedback:** perfil móvel manteve 59 FPS com 107 entidades móveis; minimapa, feed, anel vermelho, seta de ameaça e próximo desbloqueio funcionaram sem overflow. Movimento reduzido zerou balanço de árvores, passos e rotação da aura.
 - **Verificação da qualidade adaptativa:** os três níveis respeitaram pixel ratio `1,75/1,4/1,1`, sombras `2048/1024/OFF` e limites de `150/80/32` partículas. Queda simulada reduziu uma vez de `HIGH` para `MEDIUM`; desktop e móvel mantiveram 60 FPS sem erros ou overflow.
+- **Verificação do refinamento visual:** perfil móvel manteve 60 FPS no centro detalhado, sem redução automática de qualidade, com 337 draw calls, layout sem overflow e zero erros de console.
 
 ## Por que isso importa
 

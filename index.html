@@ -664,27 +664,27 @@
     });
 
     const DISTRICTS = Object.freeze([
-      Object.freeze({ id: 'residential', name: 'Residencial', xMin: -86, xMax: -18, zMin: -86, zMax: -18, targetCount: 72, material: 'residentialGround' }),
-      Object.freeze({ id: 'downtown', name: 'Centro', xMin: -12, xMax: 58, zMin: -86, zMax: -18, targetCount: 78, material: 'downtownGround' }),
-      Object.freeze({ id: 'park', name: 'Parque', xMin: -86, xMax: -18, zMin: -12, zMax: 86, targetCount: 70, material: 'parkGround' }),
-      Object.freeze({ id: 'industrial', name: 'Industrial', xMin: -12, xMax: 58, zMin: -12, zMax: 86, targetCount: 82, material: 'industrialGround' }),
-      Object.freeze({ id: 'marina', name: 'Marina', xMin: 67, xMax: 86, zMin: -86, zMax: 86, targetCount: 48, material: 'marinaGround' })
+      Object.freeze({ id: 'residential', name: 'Residencial', xMin: -86, xMax: -18, zMin: -86, zMax: -18, targetCount: 105, material: 'residentialGround' }),
+      Object.freeze({ id: 'downtown', name: 'Centro', xMin: -12, xMax: 58, zMin: -86, zMax: -18, targetCount: 130, material: 'downtownGround' }),
+      Object.freeze({ id: 'park', name: 'Parque', xMin: -86, xMax: -18, zMin: -12, zMax: 86, targetCount: 100, material: 'parkGround' }),
+      Object.freeze({ id: 'industrial', name: 'Industrial', xMin: -12, xMax: 58, zMin: -12, zMax: 86, targetCount: 110, material: 'industrialGround' }),
+      Object.freeze({ id: 'marina', name: 'Marina', xMin: 67, xMax: 86, zMin: -86, zMax: 86, targetCount: 75, material: 'marinaGround' })
     ]);
 
     const CAMERA_CONFIG = Object.freeze({
       fov: 47,
       near: 0.1,
       far: 500,
-      baseHeight: 27,
-      baseDistance: 24,
-      minHeight: 34,
+      baseHeight: 24,
+      baseDistance: 20,
+      minHeight: 32,
       maxHeight: 90,
-      minDistance: 32,
+      minDistance: 28,
       maxDistance: 100,
       growthHeightFactor: 6,
       growthDistanceFactor: 7,
-      mobileHeightBonus: 5,
-      mobileDistanceBonus: 4,
+      mobileHeightBonus: 3,
+      mobileDistanceBonus: 2,
       lookAhead: 5,
       followSmoothing: 5.5,
       zoomSmoothing: 3.2
@@ -1050,28 +1050,29 @@
         roadVertical: new THREE.PlaneGeometry(8, WORLD_CONFIG.depth + 8),
         stripeHorizontal: new THREE.PlaneGeometry(2.5, .16),
         stripeVertical: new THREE.PlaneGeometry(.16, 2.5),
-        treeTrunk: new THREE.CylinderGeometry(.22, .32, 1.8, 7),
-        treeCrownLarge: new THREE.DodecahedronGeometry(.92, 0),
-        treeCrownSmall: new THREE.DodecahedronGeometry(.62, 0),
-        lampBase: new THREE.CylinderGeometry(.17, .23, .25, 8),
-        lampPole: new THREE.CylinderGeometry(.07, .09, 2.7, 7),
-        lampBulb: new THREE.SphereGeometry(.23, 8, 6),
-        pedestrianBody: new THREE.CylinderGeometry(.20, .25, .78, 7),
-        pedestrianHead: new THREE.SphereGeometry(.22, 8, 6),
-        pedestrianLeg: new THREE.CylinderGeometry(.07, .08, .62, 6),
+        treeTrunk: new THREE.CylinderGeometry(.22, .32, 1.8, 10),
+        treeCrownLarge: new THREE.IcosahedronGeometry(.92, 1),
+        treeCrownSmall: new THREE.IcosahedronGeometry(.62, 1),
+        lampBase: new THREE.CylinderGeometry(.17, .23, .25, 12),
+        lampPole: new THREE.CylinderGeometry(.07, .09, 2.7, 10),
+        lampBulb: new THREE.SphereGeometry(.23, 12, 8),
+        pedestrianBody: new THREE.CylinderGeometry(.20, .25, .78, 10),
+        pedestrianHead: new THREE.SphereGeometry(.22, 12, 9),
+        pedestrianLeg: new THREE.CylinderGeometry(.07, .08, .62, 8),
+        pedestrianArm: new THREE.CylinderGeometry(.055, .065, .58, 8),
         carBody: new THREE.BoxGeometry(2.6, .65, 1.35),
         carCabin: new THREE.BoxGeometry(1.3, .54, 1.18),
-        carWheel: new THREE.CylinderGeometry(.28, .28, .16, 10),
+        carWheel: new THREE.CylinderGeometry(.28, .28, .16, 14),
         houseBody: new THREE.BoxGeometry(4.2, 3.1, 3.6),
         houseRoof: new THREE.ConeGeometry(3.05, 2.0, 4),
         houseDoor: new THREE.BoxGeometry(.9, 1.6, .08),
         houseWindow: new THREE.BoxGeometry(.75, .72, .08),
         unitBox: new THREE.BoxGeometry(1, 1, 1),
-        unitCylinder: new THREE.CylinderGeometry(.5, .5, 1, 8),
-        unitCone: new THREE.ConeGeometry(.5, 1, 8),
-        unitSphere: new THREE.SphereGeometry(.5, 10, 8),
-        unitDodeca: new THREE.DodecahedronGeometry(.5, 0),
-        unitTorus: new THREE.TorusGeometry(.5, .11, 6, 12),
+        unitCylinder: new THREE.CylinderGeometry(.5, .5, 1, 12),
+        unitCone: new THREE.ConeGeometry(.5, 1, 12),
+        unitSphere: new THREE.SphereGeometry(.5, 14, 10),
+        unitDodeca: new THREE.IcosahedronGeometry(.5, 1),
+        unitTorus: new THREE.TorusGeometry(.5, .11, 8, 18),
         particle: new THREE.BoxGeometry(.13, .13, .13)
       });
     }
@@ -1277,7 +1278,12 @@
         fps: performanceMetrics.fps,
         drawCalls: renderer?.info?.render?.calls || 0,
         movingEntities: movingEntities.filter(entity => entity.active).length,
-        sinkingEntities: sinkingEntities.length
+        sinkingEntities: sinkingEntities.length,
+        activeObjects: destructibles.filter(entity => entity.active).length,
+        objectTypes: cityStats.types.size,
+        districtCounts: { ...cityStats.countsByDistrict },
+        highRiseCount: destructibles.filter(entity => ['largeBuilding','officeTower','hotel','tower','apartment'].includes(entity.catalogId)).length,
+        visiblePeople: destructibles.reduce((total, entity) => total + (entity.catalogId === 'crowd' ? 3 : entity.catalogId === 'pedestrian' ? 1 : 0), 0)
       };
     }
 
@@ -1312,6 +1318,7 @@
       movingEntities.forEach(entity => {
         if (entity.movement?.kind === 'boat') entity.mesh.rotation.z = 0;
         entity.mesh.userData.walkLegs?.forEach(leg => { leg.rotation.x = 0; });
+        entity.mesh.userData.walkArms?.forEach(arm => { arm.rotation.x = 0; });
       });
     }
 
@@ -1415,7 +1422,8 @@
       { id: 'cone', type: 'Cone', value: 1, radius: .32, minimumHoleRadius: 1, districts: ['industrial','downtown'], weight: 8, placement: 'lot', build: createCone },
       { id: 'crate', type: 'Caixa', value: 1, radius: .42, minimumHoleRadius: 1, districts: ['industrial','marina','downtown'], weight: 7, placement: 'lot', build: createCrate },
       { id: 'hydrant', type: 'Hidrante', value: 2, radius: .42, minimumHoleRadius: 1.1, districts: ['residential','downtown'], weight: 5, placement: 'lot', build: createHydrant },
-      { id: 'pedestrian', type: 'Pedestre', value: 1, radius: .45, minimumHoleRadius: 1, districts: ['downtown','residential','park','marina'], weight: 10, placement: 'lot', build: createPedestrian },
+      { id: 'pedestrian', type: 'Pedestre', value: 1, radius: .45, minimumHoleRadius: 1, districts: ['downtown','residential','park','marina'], weight: 30, placement: 'lot', build: createPedestrian },
+      { id: 'crowd', type: 'Grupo de pessoas', value: 3, radius: .9, minimumHoleRadius: 1.4, districts: ['downtown','park','residential'], weight: 13, placement: 'lot', build: createCrowd },
       { id: 'sign', type: 'Placa', value: 2, radius: .45, minimumHoleRadius: 1.1, districts: ['downtown','industrial','residential'], weight: 5, placement: 'lot', build: createSign },
       { id: 'trash', type: 'Lixeira', value: 2, radius: .5, minimumHoleRadius: 1.1, districts: ['downtown','park','marina'], weight: 5, placement: 'lot', build: createTrashCan },
       { id: 'bench', type: 'Banco', value: 3, radius: .72, minimumHoleRadius: 1.25, districts: ['park','residential','marina'], weight: 6, placement: 'lot', build: createBench },
@@ -1424,10 +1432,12 @@
       { id: 'tree', type: 'Árvore', value: 3, radius: .82, minimumHoleRadius: 1.35, districts: ['park','residential','downtown'], weight: 9, placement: 'lot', build: createTree },
       { id: 'palm', type: 'Palmeira', value: 4, radius: .92, minimumHoleRadius: 1.5, districts: ['marina','park'], weight: 8, placement: 'lot', build: createPalm },
       { id: 'motorcycle', type: 'Moto', value: 4, radius: .9, minimumHoleRadius: 1.45, districts: ['downtown','residential','industrial'], weight: 4, placement: 'road', build: createMotorcycle },
+      { id: 'bicycle', type: 'Bicicleta', value: 3, radius: .72, minimumHoleRadius: 1.3, districts: ['downtown','residential','park'], weight: 7, placement: 'lot', build: createBicycle },
       { id: 'car', type: 'Carro', value: 5, radius: 1.35, minimumHoleRadius: 1.8, districts: ['residential','downtown','industrial'], weight: 7, placement: 'road', build: createCar },
       { id: 'taxi', type: 'Táxi', value: 6, radius: 1.4, minimumHoleRadius: 1.9, districts: ['downtown','marina'], weight: 5, placement: 'road', build: createTaxi },
       { id: 'van', type: 'Van', value: 7, radius: 1.6, minimumHoleRadius: 2.1, districts: ['industrial','residential','downtown'], weight: 4, placement: 'road', build: createVan },
       { id: 'kiosk', type: 'Quiosque', value: 8, radius: 1.75, minimumHoleRadius: 2.2, districts: ['marina','park','downtown'], weight: 3, placement: 'lot', build: createKiosk },
+      { id: 'foodCart', type: 'Carrinho de comida', value: 6, radius: 1.25, minimumHoleRadius: 1.9, districts: ['downtown','park','marina'], weight: 5, placement: 'lot', build: createFoodCart },
       { id: 'fountain', type: 'Fonte', value: 9, radius: 1.9, minimumHoleRadius: 2.35, districts: ['park','downtown'], weight: 2, placement: 'lot', build: createFountain },
       { id: 'container', type: 'Contêiner', value: 8, radius: 1.7, minimumHoleRadius: 2.2, districts: ['industrial','marina'], weight: 6, placement: 'lot', build: createContainer },
       { id: 'truck', type: 'Caminhão', value: 11, radius: 2.2, minimumHoleRadius: 2.8, districts: ['industrial','downtown'], weight: 3, placement: 'road', build: createTruck },
@@ -1436,11 +1446,14 @@
       { id: 'shop', type: 'Loja', value: 16, radius: 2.8, minimumHoleRadius: 3.4, districts: ['downtown','residential'], weight: 4, placement: 'lot', build: createShop },
       { id: 'pool', type: 'Piscina', value: 12, radius: 2.4, minimumHoleRadius: 3, districts: ['residential','marina'], weight: 2, placement: 'lot', build: createPool },
       { id: 'warehouse', type: 'Galpão', value: 22, radius: 3.8, minimumHoleRadius: 4.5, districts: ['industrial'], weight: 3, placement: 'lot', build: createWarehouse },
-      { id: 'smallBuilding', type: 'Prédio', value: 22, radius: 3.4, minimumHoleRadius: 4.2, districts: ['downtown','residential'], weight: 3, placement: 'lot', build: createSmallBuilding },
-      { id: 'largeBuilding', type: 'Prédio grande', value: 35, radius: 4.5, minimumHoleRadius: 5.4, districts: ['downtown'], weight: 2, placement: 'lot', build: createLargeBuilding },
+      { id: 'smallBuilding', type: 'Prédio', value: 22, radius: 3.4, minimumHoleRadius: 4.2, districts: ['downtown','residential'], weight: 6, placement: 'lot', build: createSmallBuilding },
+      { id: 'apartment', type: 'Edifício residencial', value: 30, radius: 3.9, minimumHoleRadius: 4.8, districts: ['residential','downtown'], weight: 5, placement: 'lot', build: createApartmentBuilding },
+      { id: 'largeBuilding', type: 'Prédio grande', value: 35, radius: 4.5, minimumHoleRadius: 5.4, districts: ['downtown'], weight: 5, placement: 'lot', build: createLargeBuilding },
+      { id: 'officeTower', type: 'Torre comercial', value: 42, radius: 4.8, minimumHoleRadius: 5.8, districts: ['downtown'], weight: 6, placement: 'lot', build: createOfficeTower },
+      { id: 'hotel', type: 'Hotel', value: 38, radius: 4.4, minimumHoleRadius: 5.4, districts: ['downtown'], weight: 4, placement: 'lot', build: createHotel },
       { id: 'boat', type: 'Barco', value: 10, radius: 1.9, minimumHoleRadius: 2.4, districts: ['marina'], weight: 7, placement: 'water', build: createBoat },
       { id: 'crane', type: 'Guindaste', value: 40, radius: 5, minimumHoleRadius: 6, districts: ['industrial'], weight: 1, placement: 'lot', build: createCrane },
-      { id: 'tower', type: 'Torre', value: 45, radius: 5.3, minimumHoleRadius: 6.3, districts: ['downtown'], weight: 1, placement: 'lot', build: createTower }
+      { id: 'tower', type: 'Torre', value: 50, radius: 5.3, minimumHoleRadius: 6.3, districts: ['downtown'], weight: 2, placement: 'lot', build: createTower }
     ]);
 
     function createCity() {
@@ -1494,8 +1507,11 @@
       let placed = 0;
       let attempts = 0;
 
-      // Garante que todos os tipos tenham ao menos uma aparição no bairro principal.
-      for (const definition of available.filter(item => item.districts[0] === district.id)) {
+      // Reserva os melhores lotes para marcos e prédios antes do mobiliário pequeno.
+      const signatureObjects = available
+        .filter(item => item.districts[0] === district.id)
+        .sort((a, b) => b.radius - a.radius);
+      for (const definition of signatureObjects) {
         if (placeCatalogObject(definition, district, rng, occupied)) placed++;
       }
 
@@ -1526,7 +1542,7 @@
         ? getRoadRotation(position.x, position.z)
         : Math.floor(rng() * 4) * Math.PI / 2;
 
-      occupied.push({ x: position.x, z: position.z, r: definition.radius + .2 });
+      occupied.push({ x: position.x, z: position.z, r: definition.radius });
       addDestructible(definition, position.x, position.z, objectMesh, district.id);
       cityStats.types.add(definition.id);
       return true;
@@ -1542,7 +1558,8 @@
         if (definition.placement === 'road' && !onRoad) continue;
         if ((definition.placement === 'lot' || definition.placement === 'water') && onRoad) continue;
         if (definition.placement === 'water' && district.id !== 'marina') continue;
-        const collides = occupied.some(item => Math.hypot(item.x - x, item.z - z) < item.r + definition.radius + .35);
+        const spacing = Math.min(.55, .12 + definition.radius * .08);
+        const collides = occupied.some(item => Math.hypot(item.x - x, item.z - z) < item.r + definition.radius + spacing);
         if (!collides) return { x, z };
       }
       return null;
@@ -1622,9 +1639,33 @@
       mesh(geometries.pedestrianHead, materials.skin, 0, 1.48, 0, group);
       const leftLeg = mesh(geometries.pedestrianLeg, materials.dark, -.12, .31, 0, group);
       const rightLeg = mesh(geometries.pedestrianLeg, materials.dark, .12, .31, 0, group);
+      const leftArm = mesh(geometries.pedestrianArm, materials.skin, -.28, .92, 0, group);
+      const rightArm = mesh(geometries.pedestrianArm, materials.skin, .28, .92, 0, group);
+      leftArm.rotation.z = -.12;
+      rightArm.rotation.z = .12;
+      scaledMesh(geometries.unitSphere, materials.dark, 0, 1.67, -.01, .42, .16, .42, group);
       group.userData.walkLegs = [leftLeg, rightLeg];
+      group.userData.walkArms = [leftArm, rightArm];
       group.rotation.y = index * 1.7;
       group.userData.height = 1.72;
+      return group;
+    }
+
+    function createCrowd(index) {
+      const group = new THREE.Group();
+      const positions = [[-.48, -.18], [.42, -.26], [.04, .42]];
+      group.userData.walkLegs = [];
+      group.userData.walkArms = [];
+      positions.forEach((position, personIndex) => {
+        const person = createPedestrian(index + personIndex * 17);
+        person.position.set(position[0], 0, position[1]);
+        person.rotation.y = personIndex * 2.1 + index * .3;
+        person.scale.setScalar(.9 + personIndex * .04);
+        group.userData.walkLegs.push(...person.userData.walkLegs);
+        group.userData.walkArms.push(...person.userData.walkArms);
+        group.add(person);
+      });
+      group.userData.height = 1.75;
       return group;
     }
 
@@ -1752,6 +1793,25 @@
       return group;
     }
 
+    function createBicycle(index) {
+      const group = new THREE.Group();
+      const paint = [materials.red, materials.blue, materials.aqua, materials.yellow][index % 4];
+      [-.55, .55].forEach(x => {
+        const wheel = scaledMesh(geometries.unitTorus, materials.tire, x, .52, 0, .62, .62, .62, group);
+        wheel.rotation.y = 0;
+      });
+      const lowerFrame = scaledMesh(geometries.unitBox, paint, 0, .6, 0, 1.0, .09, .09, group);
+      lowerFrame.rotation.z = -.12;
+      const seatFrame = scaledMesh(geometries.unitBox, paint, -.12, .83, 0, .08, .62, .08, group);
+      seatFrame.rotation.z = -.48;
+      const handleFrame = scaledMesh(geometries.unitBox, materials.metal, .38, .87, 0, .07, .68, .07, group);
+      handleFrame.rotation.z = .35;
+      scaledMesh(geometries.unitBox, materials.dark, -.28, 1.12, 0, .38, .08, .18, group);
+      scaledMesh(geometries.unitBox, materials.metal, .49, 1.16, 0, .42, .07, .07, group);
+      group.userData.height = 1.22;
+      return group;
+    }
+
     function createTaxi(index) {
       const group = createCar(index);
       group.children[0].material = materials.yellow;
@@ -1778,6 +1838,22 @@
       roof.rotation.y = Math.PI / 4;
       scaledMesh(geometries.unitBox, materials.window, 0, 1.35, 1.02, 1.15, .72, .08, group);
       group.userData.height = 3.15;
+      return group;
+    }
+
+    function createFoodCart(index) {
+      const group = new THREE.Group();
+      const body = [materials.red, materials.aqua, materials.orange][index % 3];
+      scaledMesh(geometries.unitBox, body, 0, .68, 0, 1.8, 1.1, 1.15, group);
+      scaledMesh(geometries.unitBox, materials.white, 0, 1.32, 0, 2.0, .18, 1.35, group);
+      const canopy = scaledMesh(geometries.unitBox, materials.yellow, 0, 2.22, 0, 2.2, .16, 1.5, group);
+      canopy.rotation.z = index % 2 ? .035 : -.035;
+      [-.78, .78].forEach(x => scaledMesh(geometries.unitCylinder, materials.metal, x, 1.76, 0, .08, .9, .08, group));
+      [-.62, .62].forEach(x => {
+        const wheel = scaledMesh(geometries.unitTorus, materials.tire, x, .25, .62, .42, .42, .42, group);
+        wheel.rotation.y = Math.PI / 2;
+      });
+      group.userData.height = 2.35;
       return group;
     }
 
@@ -1862,24 +1938,92 @@
       return group;
     }
 
+    function addFacadeBands(group, width, depth, heights, scale = .72) {
+      heights.forEach(y => {
+        const front = scaledMesh(geometries.unitBox, materials.window, 0, y, depth / 2 + .045, width * scale, .46, .09, group);
+        const back = scaledMesh(geometries.unitBox, materials.window, 0, y, -depth / 2 - .045, width * scale, .46, .09, group);
+        front.castShadow = back.castShadow = false;
+        front.receiveShadow = back.receiveShadow = false;
+      });
+      const bandHeight = Math.max(.8, heights[heights.length - 1] - heights[0] + .5);
+      const bandCenter = (heights[0] + heights[heights.length - 1]) / 2;
+      const right = scaledMesh(geometries.unitBox, materials.window, width / 2 + .045, bandCenter, 0, .09, bandHeight, depth * .42, group);
+      const left = scaledMesh(geometries.unitBox, materials.window, -width / 2 - .045, bandCenter, 0, .09, bandHeight, depth * .42, group);
+      right.castShadow = left.castShadow = false;
+      right.receiveShadow = left.receiveShadow = false;
+    }
+
+    function addRooftopDetails(group, y, width, index) {
+      scaledMesh(geometries.unitBox, materials.concrete, -.9, y + .28, .2, 1.25, .56, 1.05, group);
+      scaledMesh(geometries.unitCylinder, materials.metal, .85, y + .42, -.45, .38, .84, .38, group);
+      if (index % 2 === 0) {
+        scaledMesh(geometries.unitCylinder, materials.metal, 0, y + 1.1, 0, .07, 1.65, .07, group);
+        scaledMesh(geometries.unitSphere, materials.lamp, 0, y + 1.95, 0, .16, .16, .16, group);
+      }
+    }
+
     function createSmallBuilding(index) {
       const group = new THREE.Group();
       const wall = [materials.blue, materials.orange, materials.aqua, materials.white][index % 4];
-      scaledMesh(geometries.unitBox, wall, 0, 2.8, 0, 4.5, 5.6, 4.2, group);
-      [-1.2, 0, 1.2].forEach(x => scaledMesh(geometries.unitBox, materials.window, x, 3.3, 2.12, .72, .82, .08, group));
-      group.userData.height = 5.7;
+      scaledMesh(geometries.unitBox, wall, 0, 3.2, 0, 4.7, 6.4, 4.3, group);
+      addFacadeBands(group, 4.7, 4.3, [1.65, 3.2, 4.75]);
+      scaledMesh(geometries.unitBox, materials.dark, 0, .9, 2.2, 1.05, 1.75, .12, group);
+      scaledMesh(geometries.unitBox, materials.white, 0, 6.5, 0, 4.35, .28, 3.95, group);
+      addRooftopDetails(group, 6.65, 4.7, index);
+      group.userData.height = index % 2 === 0 ? 8.7 : 7.1;
+      return group;
+    }
+
+    function createApartmentBuilding(index) {
+      const group = new THREE.Group();
+      const wall = [materials.white, materials.orange, materials.blue][index % 3];
+      scaledMesh(geometries.unitBox, wall, 0, 5.3, 0, 5.4, 10.6, 4.8, group);
+      addFacadeBands(group, 5.4, 4.8, [1.6, 3.4, 5.2, 7, 8.8], .64);
+      [2.25, 5.85, 9.45].forEach(y => {
+        scaledMesh(geometries.unitBox, materials.concrete, 0, y, 2.7, 4.7, .16, .72, group);
+        scaledMesh(geometries.unitBox, materials.metal, 0, y + .31, 3.02, 4.45, .46, .06, group);
+      });
+      scaledMesh(geometries.unitBox, materials.dark, 0, .95, 2.46, 1.15, 1.9, .12, group);
+      addRooftopDetails(group, 10.65, 5.4, index);
+      group.userData.height = index % 2 === 0 ? 12.7 : 11.5;
       return group;
     }
 
     function createLargeBuilding(index) {
       const group = new THREE.Group();
       const wall = [materials.blue, materials.purple, materials.concrete][index % 3];
-      scaledMesh(geometries.unitBox, wall, 0, 5, 0, 6.2, 10, 6.2, group);
-      [-1.8, 0, 1.8].forEach(x => {
-        scaledMesh(geometries.unitBox, materials.window, x, 4, 3.12, .95, 1.25, .08, group);
-        scaledMesh(geometries.unitBox, materials.window, x, 7, 3.12, .95, 1.25, .08, group);
-      });
-      group.userData.height = 10.1;
+      scaledMesh(geometries.unitBox, wall, 0, 5.2, 0, 6.4, 10.4, 6.1, group);
+      addFacadeBands(group, 6.4, 6.1, [1.8, 4, 6.2, 8.4]);
+      scaledMesh(geometries.unitBox, index % 2 ? materials.white : materials.aqua, 0, 12.4, 0, 4.8, 4.0, 4.8, group);
+      addFacadeBands(group, 4.8, 4.8, [11.2, 13.2], .7);
+      addRooftopDetails(group, 14.45, 4.8, index);
+      group.userData.height = index % 2 === 0 ? 16.5 : 15.2;
+      return group;
+    }
+
+    function createOfficeTower(index) {
+      const group = new THREE.Group();
+      const base = [materials.blue, materials.purple, materials.aqua][index % 3];
+      scaledMesh(geometries.unitBox, materials.concrete, 0, 1.25, 0, 7.1, 2.5, 6.6, group);
+      scaledMesh(geometries.unitBox, base, 0, 8.0, 0, 5.8, 13.5, 5.4, group);
+      addFacadeBands(group, 5.8, 5.4, [3.1, 5.4, 7.7, 10, 12.3, 14.6], .82);
+      scaledMesh(geometries.unitBox, materials.window, 0, 16.5, 0, 4.5, 3.5, 4.2, group);
+      scaledMesh(geometries.unitBox, materials.white, 0, 18.4, 0, 4.8, .28, 4.5, group);
+      addRooftopDetails(group, 18.55, 4.5, index);
+      group.userData.height = index % 2 === 0 ? 20.6 : 19.4;
+      return group;
+    }
+
+    function createHotel(index) {
+      const group = new THREE.Group();
+      const wall = [materials.orange, materials.white, materials.pink][index % 3];
+      scaledMesh(geometries.unitBox, materials.concrete, 0, 1.2, 0, 6.8, 2.4, 5.5, group);
+      scaledMesh(geometries.unitBox, wall, 0, 7.2, 0, 5.6, 9.6, 4.7, group);
+      addFacadeBands(group, 5.6, 4.7, [3.2, 5.2, 7.2, 9.2, 11.2], .7);
+      scaledMesh(geometries.unitBox, materials.red, 0, 2.35, 3.12, 4.2, .34, 1.0, group).rotation.x = -.18;
+      scaledMesh(geometries.unitBox, materials.lamp, 0, 12.45, 2.42, 2.4, .55, .1, group);
+      addRooftopDetails(group, 12.1, 5.6, index);
+      group.userData.height = index % 2 === 0 ? 14.2 : 13.1;
       return group;
     }
 
@@ -1908,10 +2052,14 @@
     function createTower(index) {
       const group = new THREE.Group();
       const wall = index % 2 ? materials.purple : materials.blue;
-      scaledMesh(geometries.unitBox, wall, 0, 6.2, 0, 5.4, 12.4, 5.4, group);
-      scaledMesh(geometries.unitCylinder, materials.window, 0, 12.8, 0, 3.8, .8, 3.8, group);
-      scaledMesh(geometries.unitCone, materials.yellow, 0, 14.0, 0, 3.2, 2.2, 3.2, group);
-      group.userData.height = 15.2;
+      scaledMesh(geometries.unitBox, materials.concrete, 0, 1.1, 0, 7.4, 2.2, 7.0, group);
+      scaledMesh(geometries.unitBox, wall, 0, 8.1, 0, 5.8, 14.0, 5.8, group);
+      addFacadeBands(group, 5.8, 5.8, [3.2, 5.6, 8, 10.4, 12.8, 15.2], .8);
+      scaledMesh(geometries.unitCylinder, materials.window, 0, 16.1, 0, 4.5, 1.2, 4.5, group);
+      scaledMesh(geometries.unitCone, materials.yellow, 0, 18.25, 0, 3.4, 3.2, 3.4, group);
+      scaledMesh(geometries.unitCylinder, materials.metal, 0, 20.65, 0, .12, 2.4, .12, group);
+      scaledMesh(geometries.unitSphere, materials.lamp, 0, 21.9, 0, .22, .22, .22, group);
+      group.userData.height = 22.2;
       return group;
     }
 
@@ -1954,7 +2102,7 @@
           direction: Math.sin(x * 12.989 + z * 78.233) >= 0 ? 1 : -1,
           speed: speedByType[definition.id] || 1
         };
-      } else if (definition.id === 'pedestrian') {
+      } else if (definition.id === 'pedestrian' || definition.id === 'crowd') {
         entity.movement = {
           kind: 'pedestrian',
           originX: x,
@@ -2611,8 +2759,11 @@
           const legSwing = reducedMotion || !profile.decorativeMotion ? 0 : Math.sin(movement.time * 5) * .34;
           const legs = entity.mesh.userData.walkLegs;
           if (legs) {
-            legs[0].rotation.x = legSwing;
-            legs[1].rotation.x = -legSwing;
+            for (let i = 0; i < legs.length; i++) legs[i].rotation.x = i % 2 ? -legSwing : legSwing;
+          }
+          const arms = entity.mesh.userData.walkArms;
+          if (arms) {
+            for (let i = 0; i < arms.length; i++) arms[i].rotation.x = i % 2 ? legSwing * .72 : -legSwing * .72;
           }
           moved = true;
         } else if (movement?.kind === 'boat') {

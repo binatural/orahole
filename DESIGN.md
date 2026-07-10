@@ -28,6 +28,7 @@ Estratégia de cor `full palette`: teal identifica o jogador, amarelo comunica r
 ## World Composition
 
 - Mundo jogável de `180 × 180`, cercado por água azul para que os limites não revelem um vazio visual.
+- A cidade começa com 520 objetos distribuídos em metas fixas por bairro: residencial 105, centro 130, parque 100, industrial 110 e marina 75.
 - **Residencial:** gramado vivo, casas, piscinas, jardins e veículos particulares.
 - **Centro:** superfícies azul-ardósia, comércio, prédios, táxis, ônibus e mobiliário urbano.
 - **Parque:** verde profundo, árvores, arbustos, bancos e fontes.
@@ -35,6 +36,16 @@ Estratégia de cor `full palette`: teal identifica o jogador, amarelo comunica r
 - **Marina:** areia amarela, água, palmeiras, quiosques e barcos.
 - Estradas escuras e faixas amarelas atravessam os bairros e criam contraste com os terrenos.
 - A geração usa semente reproduzível, mas escolhe uma nova semente a cada reinício.
+- Objetos de maior raio são posicionados primeiro para reservar lotes ao skyline; pessoas, bicicletas, veículos e mobiliário preenchem os espaços restantes.
+
+## Visual Density and Models
+
+- O catálogo possui 36 tipos, incluindo grupos de pessoas, bicicletas, carrinhos de comida, edifícios residenciais, hotéis e torres comerciais.
+- O centro usa pelo menos cinco famílias de edifícios altos com alturas, recuos e volumes diferentes; a torre final alcança aproximadamente 22 metros.
+- Fachadas usam faixas de janelas nas quatro orientações, entradas, marquises, varandas, coroamentos e equipamentos de cobertura.
+- Pessoas possuem cabeça suavizada, cabelo, braços e pernas animadas; grupos reúnem três variações sem criar uma nova regra de gameplay.
+- Árvores, postes, rodas e formas redondas usam mais segmentos, preservando o estilo arcade sem a aparência excessivamente facetada.
+- Faixas de janela não projetam sombras próprias, reduzindo o custo do shadow pass sem remover sua profundidade visual.
 
 ## Lighting and Materials
 
@@ -80,6 +91,7 @@ Transições de 150–250 ms para estados da interface. Partículas e pulsos res
 ## Camera
 
 - A câmera permanece ancorada ao jogador, com o buraco ligeiramente abaixo do centro para revelar mais área à frente.
+- O enquadramento inicial é mais próximo para valorizar pessoas, veículos e fachadas; o afastamento proporcional continua conforme o crescimento.
 - Altura e distância aumentam proporcionalmente ao raio do buraco, com limites mínimos e máximos.
 - Posição, alvo e zoom usam amortecimento exponencial independente da taxa de quadros.
 - O perfil móvel recebe altura e distância adicionais para compensar a tela estreita.
