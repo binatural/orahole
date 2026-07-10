@@ -745,43 +745,48 @@
       })
     });
 
-    // Cores deliberadamente saturadas: cenário ensolarado, sem lavagem azul.
+    // Paleta urbana natural: neutros minerais dominam; cor forte fica restrita ao gameplay.
     const PALETTE = Object.freeze({
-      sky: 0x35c8f3,
-      fog: 0x70d8f3,
-      grass: 0x1ec866,
-      road: 0x18283d,
-      sidewalk: 0xe8edf3,
-      roadLine: 0xffce32,
-      trunk: 0x88482f,
-      leaf: 0x00a957,
-      leafLight: 0x2ed866,
-      metal: 0x263447,
-      lamp: 0xffe36a,
-      skin: 0xffa56f,
-      ink: 0x182337,
-      coral: 0xff4f5e,
-      cobalt: 0x3566f5,
-      yellow: 0xffc928,
-      violet: 0x8c4ee8,
-      white: 0xf7f8fa,
-      roof: 0xe83950,
-      roofBlue: 0x3f5bd8,
-      window: 0x1dbce5,
-      tire: 0x141b27,
-      bumper: 0xe9edf2,
-      orange: 0xff7a22,
-      aqua: 0x00d6c9,
-      pink: 0xff62a8,
-      concrete: 0x59677a,
-      industrial: 0x3f4c5f,
-      sand: 0xffd56a,
-      water: 0x087fc7,
-      waterLight: 0x1db9e8,
-      parkDark: 0x0a9f52,
-      outskirts: 0x087bb5,
+      sky: 0x7fb7d1,
+      fog: 0x9db8c4,
+      grass: 0x547b4f,
+      road: 0x30363a,
+      sidewalk: 0xaeb3b5,
+      roadLine: 0xd7b94a,
+      trunk: 0x634a38,
+      leaf: 0x2f633d,
+      leafLight: 0x4f7d4b,
+      metal: 0x4d555a,
+      lamp: 0xe8c86b,
+      skin: 0xb9795c,
+      ink: 0x252b30,
+      coral: 0x8c3e36,
+      cobalt: 0x334f67,
+      yellow: 0xc89a32,
+      violet: 0x55515f,
+      white: 0xd8d9d6,
+      roof: 0x6f3d34,
+      roofBlue: 0x454d52,
+      window: 0x173541,
+      tire: 0x17191b,
+      bumper: 0xb8bdc0,
+      orange: 0x9a6135,
+      aqua: 0x3f6864,
+      pink: 0x784553,
+      concrete: 0x858b8e,
+      industrial: 0x596268,
+      sand: 0xb7a77d,
+      water: 0x376f8c,
+      waterLight: 0x4f839b,
+      parkDark: 0x365e3a,
+      outskirts: 0x416c7c,
+      buildingLight: 0xb7b8b5,
+      buildingMid: 0x858b8e,
+      buildingDark: 0x545d63,
+      brick: 0x7b4b3c,
+      stone: 0x747878,
       hole: 0x020205,
-      playerRing: 0x13e6d1
+      playerRing: 0x20b8ad
     });
 
     /**
@@ -981,7 +986,7 @@
     };
 
     const botNames = ['NOVA', 'PIXEL', 'BOLT', 'MIMO', 'ZIG'];
-    const botColors = [0xff5f68, 0xffc83d, 0x9b6dff, 0x55df78, 0x45a7ff];
+    const botColors = [0x9a4c47, 0xb88b35, 0x70657c, 0x4f7b57, 0x456b85];
     const BOT_STATES = Object.freeze({ FORAGE: 'FORAGE', HUNT: 'HUNT', FLEE: 'FLEE', WANDER: 'WANDER' });
     const BOT_PERSONALITIES = Object.freeze([
       Object.freeze({ id: 'aggressive', label: 'Agressivo', aggression: 1, caution: .42, collector: .55, perception: 44, minDecision: .3, maxDecision: .5 }),
@@ -995,47 +1000,105 @@
     // Paleta de materiais compartilhados reduz o custo de renderização.
     const materials = {};
     const geometries = {};
+    const surfaceTextures = {};
     const particleMaterials = new Map();
 
-    function createMaterials() {
-      // Mapa de três tons cria contraste de desenho animado sem pós-processamento.
-      const toneData = new Uint8Array([70, 165, 255]);
-      const toonGradient = new THREE.DataTexture(toneData, 3, 1, THREE.LuminanceFormat);
-      toonGradient.minFilter = THREE.NearestFilter;
-      toonGradient.magFilter = THREE.NearestFilter;
-      toonGradient.generateMipmaps = false;
-      toonGradient.needsUpdate = true;
+    function createSurfaceTexture(hex, variance, repeat, pattern = 'noise', seed = 1) {
+      const size = 96;
+      const canvasTexture = document.createElement('canvas');
+      canvasTexture.width = size;
+      canvasTexture.height = size;
+      const ctx = canvasTexture.getContext('2d');
+      const image = ctx.createImageData(size, size);
+      const base = { r: hex >> 16 & 255, g: hex >> 8 & 255, b: hex & 255 };
+      let randomState = seed >>> 0;
+      const random = () => {
+        randomState = (randomState * 1664525 + 1013904223) >>> 0;
+        return randomState / 4294967296;
+      };
+      for (let i = 0; i < image.data.length; i += 4) {
+        const noise = (random() - .5) * variance;
+        image.data[i] = clamp(base.r + noise, 0, 255);
+        image.data[i + 1] = clamp(base.g + noise, 0, 255);
+        image.data[i + 2] = clamp(base.b + noise, 0, 255);
+        image.data[i + 3] = 255;
+      }
+      ctx.putImageData(image, 0, 0);
 
-      const toon = (color, extra = {}) => new THREE.MeshToonMaterial({ color, gradientMap: toonGradient, ...extra });
-      const shiny = (color, extra = {}) => new THREE.MeshPhongMaterial({
-        color,
-        flatShading: true,
-        shininess: 85,
-        specular: 0xffffff,
-        ...extra
+      if (pattern === 'slabs') {
+        ctx.strokeStyle = 'rgba(45, 50, 52, .22)';
+        ctx.lineWidth = 1.2;
+        for (let p = 0; p <= size; p += 24) {
+          ctx.beginPath(); ctx.moveTo(p, 0); ctx.lineTo(p, size); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(0, p); ctx.lineTo(size, p); ctx.stroke();
+        }
+      } else if (pattern === 'brick') {
+        ctx.strokeStyle = 'rgba(205, 198, 186, .34)';
+        ctx.lineWidth = 1.3;
+        for (let y = 0; y <= size; y += 12) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(size, y); ctx.stroke();
+          const offset = y / 12 % 2 ? 12 : 0;
+          for (let x = offset; x <= size; x += 24) {
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, Math.min(size, y + 12)); ctx.stroke();
+          }
+        }
+      }
+
+      const texture = new THREE.CanvasTexture(canvasTexture);
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(repeat, repeat);
+      texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+      texture.encoding = THREE.sRGBEncoding;
+      return texture;
+    }
+
+    function createMaterials() {
+      Object.assign(surfaceTextures, {
+        grass: createSurfaceTexture(PALETTE.grass, 24, 18, 'noise', 11),
+        park: createSurfaceTexture(PALETTE.parkDark, 22, 20, 'noise', 17),
+        asphalt: createSurfaceTexture(PALETTE.road, 15, 22, 'noise', 23),
+        sidewalk: createSurfaceTexture(PALETTE.sidewalk, 12, 10, 'slabs', 31),
+        concreteLight: createSurfaceTexture(PALETTE.buildingLight, 14, 5, 'noise', 41),
+        concreteMid: createSurfaceTexture(PALETTE.buildingMid, 16, 5, 'noise', 47),
+        concreteDark: createSurfaceTexture(PALETTE.buildingDark, 13, 5, 'noise', 53),
+        brick: createSurfaceTexture(PALETTE.brick, 12, 5, 'brick', 59),
+        sand: createSurfaceTexture(PALETTE.sand, 18, 14, 'noise', 61)
       });
 
+      const standard = (color, extra = {}) => new THREE.MeshStandardMaterial({
+        color,
+        roughness: .82,
+        metalness: .02,
+        ...extra
+      });
+      const textured = (map, extra = {}) => standard(0xffffff, { map, ...extra });
+
       Object.assign(materials, {
-        grass: toon(PALETTE.grass),
-        road: toon(PALETTE.road, { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
-        sidewalk: toon(PALETTE.sidewalk),
-        line: toon(PALETTE.roadLine, { polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }),
-        trunk: toon(PALETTE.trunk), leaf: toon(PALETTE.leaf),
-        leaf2: toon(PALETTE.leafLight), metal: toon(PALETTE.metal),
-        lamp: shiny(PALETTE.lamp, { emissive: 0x6b4a00 }), skin: toon(PALETTE.skin),
-        dark: toon(PALETTE.ink), red: toon(PALETTE.coral), blue: toon(PALETTE.cobalt),
-        yellow: toon(PALETTE.yellow), purple: toon(PALETTE.violet), white: toon(PALETTE.white),
-        roof: toon(PALETTE.roof), roof2: toon(PALETTE.roofBlue),
-        window: shiny(PALETTE.window, { emissive: 0x063949 }), tire: toon(PALETTE.tire),
-        bumper: shiny(PALETTE.bumper), orange: toon(PALETTE.orange), aqua: toon(PALETTE.aqua),
-        pink: toon(PALETTE.pink), concrete: toon(PALETTE.concrete), steel: shiny(PALETTE.industrial),
-        sand: toon(PALETTE.sand), water: shiny(PALETTE.waterLight, { transparent: true, opacity: .94 }),
-        residentialGround: toon(0x20ac55, { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
-        downtownGround: toon(0x43516c, { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
-        parkGround: toon(0x007f3e, { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
-        industrialGround: toon(0x344154, { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
-        marinaGround: toon(0xc88f22, { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
-        outskirts: shiny(PALETTE.outskirts, { shininess: 105 }),
+        grass: textured(surfaceTextures.grass),
+        road: textured(surfaceTextures.asphalt, { roughness: .96, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
+        sidewalk: textured(surfaceTextures.sidewalk, { roughness: .92 }),
+        line: standard(PALETTE.roadLine, { roughness: .8, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }),
+        trunk: standard(PALETTE.trunk), leaf: standard(PALETTE.leaf, { roughness: .9 }),
+        leaf2: standard(PALETTE.leafLight, { roughness: .9 }), metal: standard(PALETTE.metal, { roughness: .38, metalness: .72 }),
+        lamp: standard(PALETTE.lamp, { roughness: .32, emissive: 0x5f4a18, emissiveIntensity: .45 }), skin: standard(PALETTE.skin),
+        dark: standard(PALETTE.ink), red: standard(PALETTE.coral, { roughness: .52 }), blue: standard(PALETTE.cobalt, { roughness: .5 }),
+        yellow: standard(PALETTE.yellow, { roughness: .55 }), purple: standard(PALETTE.violet), white: standard(PALETTE.white),
+        roof: textured(surfaceTextures.brick, { roughness: .92 }), roof2: standard(PALETTE.roofBlue, { roughness: .88 }),
+        window: standard(PALETTE.window, { roughness: .16, metalness: .36, emissive: 0x020609, emissiveIntensity: .12 }), tire: standard(PALETTE.tire, { roughness: .96 }),
+        bumper: standard(PALETTE.bumper, { roughness: .3, metalness: .55 }), orange: standard(PALETTE.orange), aqua: standard(PALETTE.aqua),
+        pink: standard(PALETTE.pink), concrete: textured(surfaceTextures.concreteMid, { roughness: .94 }), steel: standard(PALETTE.industrial, { roughness: .36, metalness: .68 }),
+        sand: textured(surfaceTextures.sand, { roughness: .96 }), water: standard(PALETTE.waterLight, { roughness: .18, metalness: .08, transparent: true, opacity: .92 }),
+        buildingLight: textured(surfaceTextures.concreteLight, { roughness: .9 }),
+        buildingMid: textured(surfaceTextures.concreteMid, { roughness: .9 }),
+        buildingDark: textured(surfaceTextures.concreteDark, { roughness: .88 }),
+        brick: textured(surfaceTextures.brick, { roughness: .94 }),
+        stone: standard(PALETTE.stone, { roughness: .93 }),
+        residentialGround: textured(surfaceTextures.grass, { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
+        downtownGround: textured(surfaceTextures.sidewalk, { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
+        parkGround: textured(surfaceTextures.park, { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
+        industrialGround: textured(surfaceTextures.concreteDark, { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
+        marinaGround: textured(surfaceTextures.sand, { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
+        outskirts: standard(PALETTE.outskirts, { roughness: .22, metalness: .06 }),
         black: new THREE.MeshBasicMaterial({ color: PALETTE.hole }),
         holeRing: new THREE.MeshBasicMaterial({ color: PALETTE.playerRing, transparent: true, opacity: 0.96 })
       });
@@ -1110,6 +1173,8 @@
       renderer.shadowMap.enabled = getQualityProfile().shadows;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.outputEncoding = THREE.sRGBEncoding;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.0;
 
       clock = new THREE.Clock();
       createMaterials();
@@ -1129,8 +1194,8 @@
     }
 
     function createLights() {
-      scene.add(new THREE.HemisphereLight(0xc9f4ff, 0x1b552f, 0.68));
-      sunLight = new THREE.DirectionalLight(0xfff0c2, 1.68);
+      scene.add(new THREE.HemisphereLight(0xb8d2df, 0x3b473d, 0.68));
+      sunLight = new THREE.DirectionalLight(0xffdfb5, 2.35);
       sunLight.position.set(-24, 42, 22);
       sunLight.castShadow = true;
       sunLight.shadow.mapSize.set(getQualityProfile().shadowMapSize, getQualityProfile().shadowMapSize);
@@ -1686,7 +1751,7 @@
 
     function createHouse(index) {
       const group = new THREE.Group();
-      const wall = index % 3 === 0 ? materials.yellow : index % 3 === 1 ? materials.white : materials.blue;
+      const wall = index % 3 === 0 ? materials.buildingLight : index % 3 === 1 ? materials.brick : materials.stone;
       mesh(geometries.houseBody, wall, 0, 1.55, 0, group);
       const roof = mesh(geometries.houseRoof, index % 2 ? materials.roof2 : materials.roof, 0, 4.05, 0, group);
       roof.rotation.y = Math.PI / 4;
@@ -1832,9 +1897,9 @@
 
     function createKiosk(index) {
       const group = new THREE.Group();
-      const body = [materials.orange, materials.aqua, materials.pink][index % 3];
+      const body = [materials.brick, materials.stone, materials.buildingMid][index % 3];
       scaledMesh(geometries.unitBox, body, 0, 1.05, 0, 2.4, 2.1, 2.0, group);
-      const roof = scaledMesh(geometries.unitCone, materials.yellow, 0, 2.55, 0, 3.2, 1.15, 3.2, group);
+      const roof = scaledMesh(geometries.unitCone, index % 2 ? materials.roof : materials.roof2, 0, 2.55, 0, 3.2, 1.15, 3.2, group);
       roof.rotation.y = Math.PI / 4;
       scaledMesh(geometries.unitBox, materials.window, 0, 1.35, 1.02, 1.15, .72, .08, group);
       group.userData.height = 3.15;
@@ -1911,10 +1976,10 @@
 
     function createShop(index) {
       const group = new THREE.Group();
-      const wall = [materials.orange, materials.aqua, materials.pink, materials.yellow][index % 4];
+      const wall = [materials.brick, materials.buildingMid, materials.buildingLight, materials.stone][index % 4];
       scaledMesh(geometries.unitBox, wall, 0, 1.55, 0, 4.6, 3.1, 3.5, group);
       scaledMesh(geometries.unitBox, materials.window, 0, 1.55, 1.78, 2.4, 1.15, .08, group);
-      scaledMesh(geometries.unitBox, materials.white, 0, 2.45, 2.05, 3.2, .24, .95, group).rotation.x = -.25;
+      scaledMesh(geometries.unitBox, index % 2 ? materials.roof : materials.roof2, 0, 2.45, 2.05, 3.2, .24, .95, group).rotation.x = -.25;
       group.userData.height = 3.25;
       return group;
     }
@@ -1964,11 +2029,11 @@
 
     function createSmallBuilding(index) {
       const group = new THREE.Group();
-      const wall = [materials.blue, materials.orange, materials.aqua, materials.white][index % 4];
+      const wall = [materials.buildingLight, materials.buildingMid, materials.brick, materials.stone][index % 4];
       scaledMesh(geometries.unitBox, wall, 0, 3.2, 0, 4.7, 6.4, 4.3, group);
       addFacadeBands(group, 4.7, 4.3, [1.65, 3.2, 4.75]);
       scaledMesh(geometries.unitBox, materials.dark, 0, .9, 2.2, 1.05, 1.75, .12, group);
-      scaledMesh(geometries.unitBox, materials.white, 0, 6.5, 0, 4.35, .28, 3.95, group);
+      scaledMesh(geometries.unitBox, materials.stone, 0, 6.5, 0, 4.35, .28, 3.95, group);
       addRooftopDetails(group, 6.65, 4.7, index);
       group.userData.height = index % 2 === 0 ? 8.7 : 7.1;
       return group;
@@ -1976,7 +2041,7 @@
 
     function createApartmentBuilding(index) {
       const group = new THREE.Group();
-      const wall = [materials.white, materials.orange, materials.blue][index % 3];
+      const wall = [materials.buildingLight, materials.brick, materials.buildingMid][index % 3];
       scaledMesh(geometries.unitBox, wall, 0, 5.3, 0, 5.4, 10.6, 4.8, group);
       addFacadeBands(group, 5.4, 4.8, [1.6, 3.4, 5.2, 7, 8.8], .64);
       [2.25, 5.85, 9.45].forEach(y => {
@@ -1991,10 +2056,10 @@
 
     function createLargeBuilding(index) {
       const group = new THREE.Group();
-      const wall = [materials.blue, materials.purple, materials.concrete][index % 3];
+      const wall = [materials.buildingMid, materials.buildingDark, materials.stone][index % 3];
       scaledMesh(geometries.unitBox, wall, 0, 5.2, 0, 6.4, 10.4, 6.1, group);
       addFacadeBands(group, 6.4, 6.1, [1.8, 4, 6.2, 8.4]);
-      scaledMesh(geometries.unitBox, index % 2 ? materials.white : materials.aqua, 0, 12.4, 0, 4.8, 4.0, 4.8, group);
+      scaledMesh(geometries.unitBox, index % 2 ? materials.buildingLight : materials.buildingDark, 0, 12.4, 0, 4.8, 4.0, 4.8, group);
       addFacadeBands(group, 4.8, 4.8, [11.2, 13.2], .7);
       addRooftopDetails(group, 14.45, 4.8, index);
       group.userData.height = index % 2 === 0 ? 16.5 : 15.2;
@@ -2003,12 +2068,12 @@
 
     function createOfficeTower(index) {
       const group = new THREE.Group();
-      const base = [materials.blue, materials.purple, materials.aqua][index % 3];
+      const base = [materials.buildingDark, materials.stone, materials.buildingMid][index % 3];
       scaledMesh(geometries.unitBox, materials.concrete, 0, 1.25, 0, 7.1, 2.5, 6.6, group);
       scaledMesh(geometries.unitBox, base, 0, 8.0, 0, 5.8, 13.5, 5.4, group);
       addFacadeBands(group, 5.8, 5.4, [3.1, 5.4, 7.7, 10, 12.3, 14.6], .82);
       scaledMesh(geometries.unitBox, materials.window, 0, 16.5, 0, 4.5, 3.5, 4.2, group);
-      scaledMesh(geometries.unitBox, materials.white, 0, 18.4, 0, 4.8, .28, 4.5, group);
+      scaledMesh(geometries.unitBox, materials.metal, 0, 18.4, 0, 4.8, .28, 4.5, group);
       addRooftopDetails(group, 18.55, 4.5, index);
       group.userData.height = index % 2 === 0 ? 20.6 : 19.4;
       return group;
@@ -2016,7 +2081,7 @@
 
     function createHotel(index) {
       const group = new THREE.Group();
-      const wall = [materials.orange, materials.white, materials.pink][index % 3];
+      const wall = [materials.brick, materials.buildingLight, materials.stone][index % 3];
       scaledMesh(geometries.unitBox, materials.concrete, 0, 1.2, 0, 6.8, 2.4, 5.5, group);
       scaledMesh(geometries.unitBox, wall, 0, 7.2, 0, 5.6, 9.6, 4.7, group);
       addFacadeBands(group, 5.6, 4.7, [3.2, 5.2, 7.2, 9.2, 11.2], .7);
@@ -2051,12 +2116,12 @@
 
     function createTower(index) {
       const group = new THREE.Group();
-      const wall = index % 2 ? materials.purple : materials.blue;
+      const wall = index % 2 ? materials.buildingDark : materials.stone;
       scaledMesh(geometries.unitBox, materials.concrete, 0, 1.1, 0, 7.4, 2.2, 7.0, group);
       scaledMesh(geometries.unitBox, wall, 0, 8.1, 0, 5.8, 14.0, 5.8, group);
       addFacadeBands(group, 5.8, 5.8, [3.2, 5.6, 8, 10.4, 12.8, 15.2], .8);
       scaledMesh(geometries.unitCylinder, materials.window, 0, 16.1, 0, 4.5, 1.2, 4.5, group);
-      scaledMesh(geometries.unitCone, materials.yellow, 0, 18.25, 0, 3.4, 3.2, 3.4, group);
+      scaledMesh(geometries.unitCone, materials.metal, 0, 18.25, 0, 3.4, 3.2, 3.4, group);
       scaledMesh(geometries.unitCylinder, materials.metal, 0, 20.65, 0, .12, 2.4, .12, group);
       scaledMesh(geometries.unitSphere, materials.lamp, 0, 21.9, 0, .22, .22, .22, group);
       group.userData.height = 22.2;

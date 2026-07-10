@@ -11,8 +11,8 @@
 >
 > O estado usado para este plano possui os hashes:
 >
-> - `index.html`: `0E446E5C19F7775C59F30F2813210675B424D22F46C3E39F7572DBAC2CDF1E75`
-> - `DESIGN.md`: `A6E91A7AB9367C2F0E5AC1D90BB168D093BC0D71C0249A8196476F8F87C7FD81`
+> - `index.html`: `1716A4426D3201C9E125302833EC4BB89E50899F443375C627B40682BB7CDB2C`
+> - `DESIGN.md`: `0D3AD3CC981C86D3A3B77EB916609DAB1922DEE1335D6DEEC6F0A5B6586037AE`
 >
 > Se os hashes forem diferentes antes da primeira alteração, compare o código atual com os trechos em “Estado atual”. Se funções ou constantes citadas tiverem mudado, PARE e peça atualização do plano.
 
@@ -36,6 +36,7 @@
 - **Etapa 7 concluída em 2026-07-10:** minimapa, feed de eliminações, anéis de alvo/ameaça, seta de perigo, próximo desbloqueio, tráfego, pedestres, barcos, vegetação, rodas, aura e sucção aprimorada.
 - **Etapa 8 concluída em 2026-07-10:** perfis `HIGH/MEDIUM/LOW`, seleção inicial por capacidade, redução automática após 4 segundos abaixo de 30 FPS, limites dinâmicos de sombras/pixel ratio/partículas e listas dedicadas de entidades animadas.
 - **Refinamento visual concluído em 2026-07-10:** skyline com hotéis, apartamentos e torres comerciais, modelos mais suaves, fachadas detalhadas, 174 pessoas visíveis e densidade elevada para 520 objetos.
+- **Direção urbana realista concluída em 2026-07-10:** materiais PBR, texturas procedurais, concreto/tijolo/pedra/vidro escuro, iluminação com ACES e remoção das fachadas fantasia em amarelo, ciano e pink.
 - **Próxima ação:** iniciar pela Etapa 9, ganchos de teste e verificação completa. Não repetir as Etapas 1–8.
 - **Verificação registrada:** 59 FPS em desktop e 60 FPS em perfil móvel no ambiente de teste, sem erros de console; busca espacial com média de 1 candidato para aproximadamente 90 objetos ativos.
 - **Verificação da câmera:** raio `1,9 → 6` alterou altura/distância de `38,4/37,3 → 63,0/66,0`; quatro extremos permaneceram enquadrados; mouse e toque moveram o jogador sem erros.
@@ -45,6 +46,7 @@
 - **Verificação do feedback:** perfil móvel manteve 59 FPS com 107 entidades móveis; minimapa, feed, anel vermelho, seta de ameaça e próximo desbloqueio funcionaram sem overflow. Movimento reduzido zerou balanço de árvores, passos e rotação da aura.
 - **Verificação da qualidade adaptativa:** os três níveis respeitaram pixel ratio `1,75/1,4/1,1`, sombras `2048/1024/OFF` e limites de `150/80/32` partículas. Queda simulada reduziu uma vez de `HIGH` para `MEDIUM`; desktop e móvel mantiveram 60 FPS sem erros ou overflow.
 - **Verificação do refinamento visual:** perfil móvel manteve 60 FPS no centro detalhado, sem redução automática de qualidade, com 337 draw calls, layout sem overflow e zero erros de console.
+- **Verificação dos materiais realistas:** perfil móvel manteve 60 FPS e qualidade `MEDIUM`, com 338 draw calls, 482 objetos ainda ativos após o trajeto ao centro e zero erros de console.
 
 ## Por que isso importa
 

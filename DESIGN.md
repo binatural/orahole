@@ -2,23 +2,24 @@
 
 ## Direction
 
-Cidade arcade em um dia ensolarado, vista como um brinquedo urbano colorido. A imagem deve ser nítida, energética e imediatamente legível: céu limpo, cores saturadas, sombras definidas e materiais em estilo toon/cel shading. Evitar névoa próxima, tons lavados, bloom global e filtros que escondam a silhueta dos objetos.
+Cidade grande estilizada com materiais urbanos reconhecíveis e proporções legíveis para gameplay. A imagem deve lembrar uma maquete arquitetônica contemporânea: concreto, tijolo, pedra, aço, vidro escuro, asfalto e vegetação natural sob luz solar definida. Evitar fachadas em cores fantasia, aparência de brinquedo plástico, névoa próxima, bloom global e filtros que escondam silhuetas.
 
-Estratégia de cor `full palette`: teal identifica o jogador, amarelo comunica recompensa, coral sinaliza ação, cobalto e violeta diferenciam objetos e competidores. As áreas grandes do cenário usam cores decididas, mas com luminâncias diferentes para preservar separação visual.
+Estratégia de cor `restrained`: neutros minerais dominam o cenário. Vinho, azul-marinho, verde escuro e ocre aparecem em veículos, roupas e pequenos objetos plausíveis. Teal permanece reservado ao jogador e amarelo ao progresso/interface; as cores de gameplay não contaminam fachadas ou grandes superfícies.
 
 ## Color
 
-- Primary/player: `oklch(0.74 0.18 188)`
-- Sky: `oklch(0.79 0.14 220)`
-- Grass: `oklch(0.72 0.20 148)`
-- Asphalt: `oklch(0.29 0.06 255)`
-- Sidewalk: `oklch(0.94 0.01 250)`
-- Road marking/reward: `oklch(0.84 0.18 88)`
-- Coral/action: `oklch(0.65 0.24 28)`
-- Cobalt/building: `oklch(0.58 0.23 264)`
-- Violet/competitor: `oklch(0.62 0.23 300)`
-- Vegetation dark: `oklch(0.61 0.20 148)`
-- Water/window: `oklch(0.72 0.16 220)`
+- Primary/player: `#20b8ad`
+- Sky: `#7fb7d1`
+- Grass: `#547b4f`
+- Asphalt: `#30363a`
+- Sidewalk: `#aeb3b5`
+- Road marking/reward: `#d7b94a`
+- Concrete light/mid/dark: `#b7b8b5`, `#858b8e`, `#545d63`
+- Brick: `#7b4b3c`
+- Stone: `#747878`
+- Glass: `#173541`
+- Vegetation dark/light: `#2f633d`, `#4f7d4b`
+- Vehicle accents: burgundy `#8c3e36`, navy `#334f67`, graphite `#55515f`
 - HUD surface: `oklch(0.20 0.04 255 / 0.93)`
 - HUD ink: `oklch(0.98 0.01 200)`
 - HUD muted: `oklch(0.79 0.04 235)`
@@ -29,11 +30,11 @@ Estratégia de cor `full palette`: teal identifica o jogador, amarelo comunica r
 
 - Mundo jogável de `180 × 180`, cercado por água azul para que os limites não revelem um vazio visual.
 - A cidade começa com 520 objetos distribuídos em metas fixas por bairro: residencial 105, centro 130, parque 100, industrial 110 e marina 75.
-- **Residencial:** gramado vivo, casas, piscinas, jardins e veículos particulares.
-- **Centro:** superfícies azul-ardósia, comércio, prédios, táxis, ônibus e mobiliário urbano.
-- **Parque:** verde profundo, árvores, arbustos, bancos e fontes.
-- **Industrial:** cinza-azulado escuro, galpões, contêineres, caminhões e guindastes.
-- **Marina:** areia amarela, água, palmeiras, quiosques e barcos.
+- **Residencial:** gramado natural, casas de concreto/tijolo, piscinas, jardins e veículos particulares.
+- **Centro:** calçadas em placas de concreto, fachadas minerais, vidro escuro, táxis, ônibus e mobiliário urbano.
+- **Parque:** vegetação em verdes naturais, árvores, arbustos, bancos e fontes.
+- **Industrial:** concreto escuro, aço, galpões, contêineres, caminhões e guindastes.
+- **Marina:** areia dessaturada, água azul-acinzentada, palmeiras, quiosques e barcos.
 - Estradas escuras e faixas amarelas atravessam os bairros e criam contraste com os terrenos.
 - A geração usa semente reproduzível, mas escolhe uma nova semente a cada reinício.
 - Objetos de maior raio são posicionados primeiro para reservar lotes ao skyline; pessoas, bicicletas, veículos e mobiliário preenchem os espaços restantes.
@@ -49,10 +50,11 @@ Estratégia de cor `full palette`: teal identifica o jogador, amarelo comunica r
 
 ## Lighting and Materials
 
-- Objetos coloridos usam materiais toon com três níveis de iluminação.
-- Ruas, gramado e calçadas são foscos.
-- Carros, janelas e lâmpadas podem ter reflexo local controlado.
-- Luz ambiente é moderada; uma luz solar quente cria a hierarquia principal.
+- Todos os objetos urbanos usam `MeshStandardMaterial`; toon/cel shading não faz parte da direção atual.
+- Texturas procedurais determinísticas adicionam granulação ao concreto, asfalto, grama e areia, além de juntas de calçada e paginação de tijolos, sem arquivos externos.
+- Ruas, gramado, concreto e calçadas têm alta rugosidade; aço, carros e vidro usam metalness/roughness controlados.
+- `ACESFilmicToneMapping` e exposição neutra preservam contraste sem transformar cores em pastéis.
+- Luz ambiente é contida; uma luz solar quente e mais intensa define os volumes e sombras.
 - Sombras usam 2048 px em perfil alto e 1024 px em perfil móvel/médio.
 - Névoa atmosférica, quando presente, começa além da área jogável próxima e nunca deve criar uma camada azul sobre a ação.
 - A borda do buraco pode emitir cor local; não usar bloom em toda a imagem.
