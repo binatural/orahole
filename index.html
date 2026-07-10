@@ -1,0 +1,2948 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#10202f">
+  <title>City Void — Jogo 3D</title>
+  <style>
+    /* ---------- Identidade visual e base responsiva ---------- */
+    :root {
+      --ink: oklch(0.98 0.01 200);
+      --muted: oklch(0.79 0.04 235);
+      --panel: oklch(0.20 0.04 255 / 0.93);
+      --panel-strong: oklch(0.15 0.035 255 / 0.97);
+      --primary: oklch(0.74 0.18 188);
+      --accent: oklch(0.84 0.18 88);
+      --danger: oklch(0.65 0.24 28);
+      --violet: oklch(0.63 0.23 300);
+      --focus: oklch(0.91 0.16 98);
+      --radius: 14px;
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: oklch(0.16 0.04 250);
+      color: var(--ink);
+      overscroll-behavior: none;
+    }
+
+    body {
+      position: fixed;
+      inset: 0;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    button {
+      border: 0;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 3px;
+    }
+
+    #game-canvas {
+      position: fixed;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+    }
+
+    /* ---------- HUD ---------- */
+    .hud {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+    }
+
+    .brand {
+      position: absolute;
+      top: max(14px, env(safe-area-inset-top));
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 13px;
+      border-radius: 999px;
+      background: var(--panel-strong);
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: .04em;
+      white-space: nowrap;
+    }
+
+    .brand-mark {
+      width: 14px;
+      height: 14px;
+      border: 3px solid var(--primary);
+      border-radius: 50%;
+      background: oklch(0.04 0 0);
+      box-shadow: inset 0 0 0 2px oklch(0.04 0 0);
+    }
+
+    .score-cluster {
+      position: absolute;
+      top: max(14px, env(safe-area-inset-top));
+      left: max(14px, env(safe-area-inset-left));
+      display: flex;
+      gap: 8px;
+    }
+
+    .stat {
+      min-width: 96px;
+      padding: 10px 12px 9px;
+      border: 1px solid oklch(1 0 0 / .12);
+      border-radius: var(--radius);
+      background: var(--panel);
+    }
+
+    .stat-label {
+      display: block;
+      margin-bottom: 2px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      display: block;
+      font-size: 25px;
+      font-weight: 950;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    .timer.warning .stat-value { color: var(--accent); }
+    .timer.danger .stat-value { color: oklch(0.78 0.17 28); }
+
+    .ranking {
+      position: absolute;
+      top: max(14px, env(safe-area-inset-top));
+      right: max(14px, env(safe-area-inset-right));
+      width: min(220px, 28vw);
+      overflow: hidden;
+      border: 1px solid oklch(1 0 0 / .12);
+      border-radius: var(--radius);
+      background: var(--panel);
+      pointer-events: auto;
+    }
+
+    .ranking-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 10px 12px 7px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: .06em;
+      text-align: left;
+      text-transform: uppercase;
+    }
+
+    .ranking-title span:last-child { color: var(--primary); }
+
+    .ranking-list {
+      margin: 0;
+      padding: 0 7px 7px;
+      list-style: none;
+    }
+
+    .ranking-row {
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 7px;
+      min-height: 29px;
+      padding: 4px 6px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 750;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .ranking-row.player {
+      background: oklch(0.72 0.10 188 / .20);
+      color: oklch(0.96 0.04 188);
+    }
+
+    .rank-number { color: var(--muted); text-align: center; }
+    .rank-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rank-score { color: var(--accent); }
+
+    .bottom-hud {
+      position: absolute;
+      left: 50%;
+      bottom: max(14px, env(safe-area-inset-bottom));
+      width: min(480px, calc(100vw - 28px));
+      transform: translateX(-50%);
+    }
+
+    .progress-shell {
+      height: 9px;
+      overflow: hidden;
+      border: 2px solid var(--panel-strong);
+      border-radius: 999px;
+      background: oklch(0.18 0.03 255 / .85);
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: var(--accent);
+      transition: width 180ms cubic-bezier(.22, 1, .36, 1);
+    }
+
+    .bottom-copy {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      color: oklch(0.98 0.01 200);
+      font-size: 11px;
+      font-weight: 800;
+      text-shadow: 0 1px 3px oklch(0.05 0 0 / .9);
+    }
+
+    .sound-button {
+      position: absolute;
+      right: max(14px, env(safe-area-inset-right));
+      bottom: max(14px, env(safe-area-inset-bottom));
+      display: grid;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      border: 1px solid oklch(1 0 0 / .16);
+      border-radius: 50%;
+      background: var(--panel-strong);
+      pointer-events: auto;
+      transition: transform 180ms cubic-bezier(.22, 1, .36, 1), background 180ms ease;
+    }
+
+    .sound-button:hover { transform: translateY(-2px); background: oklch(0.24 0.05 255); }
+
+    .toast {
+      position: absolute;
+      left: 50%;
+      top: 25%;
+      transform: translate(-50%, 0) scale(.94);
+      opacity: 0;
+      color: var(--accent);
+      font-size: clamp(22px, 4vw, 40px);
+      font-weight: 950;
+      line-height: 1;
+      text-shadow: 0 3px 8px oklch(0.08 0 0 / .75);
+      transition: opacity 120ms ease, transform 260ms cubic-bezier(.22, 1, .36, 1);
+    }
+
+    .toast.show { opacity: 1; transform: translate(-50%, -18px) scale(1); }
+
+    .respawn-status {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      min-width: 210px;
+      padding: 14px 18px;
+      transform: translate(-50%, -50%);
+      border: 2px solid oklch(0.74 0.18 188 / .65);
+      border-radius: 14px;
+      background: var(--panel-strong);
+      color: var(--ink);
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .respawn-status.hidden { display: none; }
+
+    .respawn-title,
+    .respawn-copy {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .respawn-count {
+      display: block;
+      margin: 2px 0;
+      color: var(--accent);
+      font-size: 42px;
+      font-weight: 1000;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    .kill-feed {
+      position: absolute;
+      top: 92px;
+      left: max(14px, env(safe-area-inset-left));
+      width: min(250px, 34vw);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .kill-event {
+      margin-bottom: 5px;
+      padding: 6px 9px;
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--ink);
+      font-size: 11px;
+      font-weight: 800;
+      animation: kill-in 180ms cubic-bezier(.22, 1, .36, 1);
+    }
+
+    .kill-event strong { color: var(--accent); }
+
+    @keyframes kill-in {
+      from { opacity: 0; transform: translateX(-10px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .minimap {
+      position: absolute;
+      right: max(14px, env(safe-area-inset-right));
+      bottom: max(66px, calc(env(safe-area-inset-bottom) + 54px));
+      width: 138px;
+      height: 138px;
+      border: 2px solid oklch(1 0 0 / .25);
+      border-radius: 12px;
+      background: oklch(0.16 0.04 250 / .92);
+    }
+
+    .threat-arrow {
+      position: absolute;
+      z-index: 2;
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border-radius: 50%;
+      background: oklch(0.19 0.05 25 / .92);
+      color: oklch(0.72 0.24 28);
+      font-size: 21px;
+      line-height: 1;
+      transform-origin: center;
+      pointer-events: none;
+    }
+
+    .threat-arrow.hidden { display: none; }
+
+    /* ---------- Telas de início e fim ---------- */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: oklch(0.11 0.04 255 / .82);
+      transition: opacity 220ms ease, visibility 220ms ease;
+    }
+
+    .overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+    .modal {
+      width: min(520px, 100%);
+      padding: 26px;
+      border-radius: 16px;
+      background: var(--panel-strong);
+      text-align: center;
+      box-shadow: 0 8px 0 oklch(0.06 0.02 255 / .35);
+    }
+
+    .game-logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 14px;
+      font-size: clamp(36px, 9vw, 66px);
+      font-weight: 1000;
+      letter-spacing: -.04em;
+      line-height: .9;
+      text-wrap: balance;
+    }
+
+    .game-logo::before {
+      content: "";
+      width: .64em;
+      height: .64em;
+      flex: 0 0 auto;
+      border: .12em solid var(--primary);
+      border-radius: 50%;
+      background: oklch(0.03 0 0);
+    }
+
+    .tagline {
+      max-width: 42ch;
+      margin: 0 auto 20px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.5;
+      text-wrap: pretty;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 7px;
+      margin-bottom: 22px;
+    }
+
+    .control-chip {
+      padding: 7px 10px;
+      border: 1px solid oklch(1 0 0 / .13);
+      border-radius: 999px;
+      color: oklch(0.92 0.02 220);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .primary-button {
+      min-width: 190px;
+      padding: 13px 22px;
+      border-radius: 999px;
+      background: oklch(0.61 0.14 188);
+      color: white;
+      font-weight: 900;
+      transition: transform 180ms cubic-bezier(.22, 1, .36, 1), background 180ms ease;
+    }
+
+    .primary-button:hover { transform: translateY(-2px); background: oklch(0.66 0.14 188); }
+    .primary-button:active { transform: translateY(1px); }
+
+    .final-score {
+      margin: 14px 0 6px;
+      color: var(--accent);
+      font-size: clamp(46px, 12vw, 76px);
+      font-weight: 1000;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -.04em;
+      line-height: 1;
+    }
+
+    .final-label { margin: 0 0 22px; color: var(--muted); font-weight: 700; }
+
+    .loading-note {
+      position: fixed;
+      inset: auto 0 16px;
+      z-index: 50;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .debug-panel {
+      position: fixed;
+      left: max(14px, env(safe-area-inset-left));
+      bottom: 82px;
+      z-index: 20;
+      min-width: 174px;
+      padding: 9px 11px;
+      border-radius: 10px;
+      background: oklch(0.10 0.02 250 / .94);
+      color: oklch(0.94 0.03 190);
+      font: 700 11px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace;
+      white-space: pre;
+      pointer-events: none;
+    }
+
+    @media (max-width: 720px) {
+      .hud { padding: 10px; }
+      .brand { top: auto; bottom: max(48px, calc(env(safe-area-inset-bottom) + 44px)); font-size: 11px; padding: 6px 9px; }
+      .score-cluster { top: max(10px, env(safe-area-inset-top)); left: max(10px, env(safe-area-inset-left)); gap: 5px; }
+      .stat { min-width: 76px; padding: 8px 9px 7px; border-radius: 11px; }
+      .stat-label { font-size: 9px; }
+      .stat-value { font-size: 20px; }
+      .ranking { top: max(10px, env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right)); width: 128px; border-radius: 11px; }
+      .ranking-title { padding: 8px 9px 6px; font-size: 9px; }
+      .ranking-list { padding: 0 5px 5px; }
+      .ranking-row { grid-template-columns: 16px minmax(0, 1fr) auto; min-height: 24px; padding: 3px 4px; gap: 3px; font-size: 10px; }
+      .ranking-row:nth-child(n+4) { display: none; }
+      .ranking.expanded { width: 156px; }
+      .ranking.expanded .ranking-row:nth-child(n+4) { display: grid; }
+      .bottom-hud { bottom: max(10px, env(safe-area-inset-bottom)); width: calc(100vw - 96px); left: 10px; transform: none; }
+      .sound-button { right: max(10px, env(safe-area-inset-right)); bottom: max(10px, env(safe-area-inset-bottom)); }
+      .kill-feed { top: 78px; left: max(10px, env(safe-area-inset-left)); width: 164px; }
+      .kill-event { padding: 5px 7px; font-size: 9px; }
+      .minimap { right: max(10px, env(safe-area-inset-right)); bottom: max(62px, calc(env(safe-area-inset-bottom) + 54px)); width: 94px; height: 94px; border-radius: 10px; }
+      .modal { padding: 22px 18px; }
+      .control-chip { padding: 6px 8px; font-size: 11px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.001ms !important; animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game-canvas" aria-label="Área do jogo City Void"></canvas>
+
+  <div class="hud" aria-live="polite">
+    <div class="brand"><span class="brand-mark"></span>CITY VOID</div>
+
+    <div class="score-cluster">
+      <div class="stat timer" id="timer-stat">
+        <span class="stat-label">Tempo</span>
+        <span class="stat-value" id="timer">02:00</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Pontos</span>
+        <span class="stat-value" id="score">0</span>
+      </div>
+    </div>
+
+    <aside class="ranking" id="ranking" aria-label="Classificação da partida">
+      <button class="ranking-title" id="ranking-toggle" type="button" aria-expanded="false">
+        <span>Ranking</span><span>TOP 6</span>
+      </button>
+      <ol class="ranking-list" id="ranking-list"></ol>
+    </aside>
+
+    <ol class="kill-feed" id="kill-feed" aria-label="Últimas eliminações" aria-live="polite"></ol>
+
+    <div class="bottom-hud">
+      <div class="progress-shell" aria-label="Progresso para aumentar o buraco">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+      <div class="bottom-copy">
+        <span id="size-label">RAIO 1,9 m</span>
+        <span id="next-level">PRÓXIMO +10</span>
+      </div>
+    </div>
+
+    <button class="sound-button" id="sound-button" type="button" aria-label="Desativar sons" aria-pressed="false">🔊</button>
+    <canvas class="minimap" id="minimap" width="180" height="180" aria-label="Minimapa da cidade"></canvas>
+    <div class="threat-arrow hidden" id="threat-arrow" aria-label="Adversário maior próximo">▲</div>
+    <div class="toast" id="toast" aria-hidden="true">+1</div>
+    <div class="respawn-status hidden" id="respawn-status" role="status" aria-live="assertive">
+      <span class="respawn-title">Você foi engolido</span>
+      <strong class="respawn-count" id="respawn-count">3</strong>
+      <span class="respawn-copy">Voltando para a cidade</span>
+    </div>
+  </div>
+
+  <section class="overlay" id="start-screen" aria-labelledby="game-title">
+    <div class="modal">
+      <h1 class="game-logo" id="game-title">CITY VOID</h1>
+      <p class="tagline">Engula a cidade, cresça e chegue ao topo antes que os dois minutos acabem.</p>
+      <div class="controls" aria-label="Controles disponíveis">
+        <span class="control-chip">Mouse: mover</span>
+        <span class="control-chip">Touch: tocar e arrastar</span>
+        <span class="control-chip">Teclado: WASD ou setas</span>
+      </div>
+      <button class="primary-button" id="start-button" type="button">COMEÇAR PARTIDA</button>
+    </div>
+  </section>
+
+  <section class="overlay hidden" id="end-screen" aria-labelledby="end-title">
+    <div class="modal">
+      <h2 class="game-logo" id="end-title">FIM DE JOGO</h2>
+      <div class="final-score" id="final-score">0</div>
+      <p class="final-label" id="final-label">pontos • 1º lugar</p>
+      <button class="primary-button" id="restart-button" type="button">JOGAR NOVAMENTE</button>
+    </div>
+  </section>
+
+  <div class="loading-note" id="loading-note">Carregando cidade 3D…</div>
+
+  <!-- Three.js renderiza a cena WebGL; Cannon.js fornece os corpos e o mundo físico. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+  <script>
+    'use strict';
+
+    // ---------- Configuração geral ----------
+    const GAME_DURATION = 120;
+    const DEBUG_MODE = new URLSearchParams(location.search).get('debug') === '1';
+    const MOBILE_PROFILE = matchMedia('(pointer: coarse)').matches || innerWidth <= 720;
+
+    // Configurações centralizadas preparam o jogo para as próximas expansões.
+    const WORLD_CONFIG = Object.freeze({
+      width: 180,
+      depth: 180,
+      spatialCellSize: 12,
+      botSearchRadius: 30,
+      maxObjectRadius: 6,
+      targetObjectCount: 350,
+      roadWidth: 8,
+      verticalRoads: Object.freeze([-60, -15, 30, 61]),
+      horizontalRoads: Object.freeze([-60, -15, 30, 70])
+    });
+
+    const HOLE_SPAWNS = Object.freeze({
+      player: Object.freeze({ x: 0, z: 72 }),
+      bots: Object.freeze([
+        Object.freeze({ x: -54, z: -52 }),
+        Object.freeze({ x: 44, z: -52 }),
+        Object.freeze({ x: -54, z: 43 }),
+        Object.freeze({ x: 46, z: 45 }),
+        Object.freeze({ x: 2, z: -28 })
+      ])
+    });
+
+    const DISTRICTS = Object.freeze([
+      Object.freeze({ id: 'residential', name: 'Residencial', xMin: -86, xMax: -18, zMin: -86, zMax: -18, targetCount: 72, material: 'residentialGround' }),
+      Object.freeze({ id: 'downtown', name: 'Centro', xMin: -12, xMax: 58, zMin: -86, zMax: -18, targetCount: 78, material: 'downtownGround' }),
+      Object.freeze({ id: 'park', name: 'Parque', xMin: -86, xMax: -18, zMin: -12, zMax: 86, targetCount: 70, material: 'parkGround' }),
+      Object.freeze({ id: 'industrial', name: 'Industrial', xMin: -12, xMax: 58, zMin: -12, zMax: 86, targetCount: 82, material: 'industrialGround' }),
+      Object.freeze({ id: 'marina', name: 'Marina', xMin: 67, xMax: 86, zMin: -86, zMax: 86, targetCount: 48, material: 'marinaGround' })
+    ]);
+
+    const CAMERA_CONFIG = Object.freeze({
+      fov: 47,
+      near: 0.1,
+      far: 500,
+      baseHeight: 27,
+      baseDistance: 24,
+      minHeight: 34,
+      maxHeight: 90,
+      minDistance: 32,
+      maxDistance: 100,
+      growthHeightFactor: 6,
+      growthDistanceFactor: 7,
+      mobileHeightBonus: 5,
+      mobileDistanceBonus: 4,
+      lookAhead: 5,
+      followSmoothing: 5.5,
+      zoomSmoothing: 3.2
+    });
+
+    const PVP_CONFIG = Object.freeze({
+      minimumSizeAdvantage: 1.15,
+      baseBonus: 20,
+      scoreTransfer: 0.25,
+      respawnDelay: 3,
+      spawnProtection: 2,
+      growthLoss: 0.35
+    });
+
+    const LOW_CAPABILITY_DEVICE =
+      (Number.isFinite(navigator.deviceMemory) && navigator.deviceMemory <= 2) ||
+      (Number.isFinite(navigator.hardwareConcurrency) && navigator.hardwareConcurrency <= 2);
+
+    const QUALITY_CONFIG = Object.freeze({
+      order: Object.freeze(['LOW', 'MEDIUM', 'HIGH']),
+      initialTier: LOW_CAPABILITY_DEVICE ? 'LOW' : (MOBILE_PROFILE ? 'MEDIUM' : 'HIGH'),
+      downgradeFps: 30,
+      downgradeAfterSeconds: 4,
+      profiles: Object.freeze({
+        HIGH: Object.freeze({
+          maxPixelRatio: 1.75,
+          shadowMapSize: 2048,
+          shadows: true,
+          particleLimit: 150,
+          particleSpawnScale: 1,
+          vegetationFrameStride: 1,
+          decorativeMotion: true,
+          minimapInterval: 100,
+          indicatorInterval: 80
+        }),
+        MEDIUM: Object.freeze({
+          maxPixelRatio: 1.4,
+          shadowMapSize: 1024,
+          shadows: true,
+          particleLimit: 80,
+          particleSpawnScale: .5,
+          vegetationFrameStride: 2,
+          decorativeMotion: true,
+          minimapInterval: 130,
+          indicatorInterval: 100
+        }),
+        LOW: Object.freeze({
+          maxPixelRatio: 1.1,
+          shadowMapSize: 512,
+          shadows: false,
+          particleLimit: 32,
+          particleSpawnScale: .25,
+          vegetationFrameStride: 0,
+          decorativeMotion: false,
+          minimapInterval: 180,
+          indicatorInterval: 140
+        })
+      })
+    });
+
+    // Cores deliberadamente saturadas: cenário ensolarado, sem lavagem azul.
+    const PALETTE = Object.freeze({
+      sky: 0x35c8f3,
+      fog: 0x70d8f3,
+      grass: 0x1ec866,
+      road: 0x18283d,
+      sidewalk: 0xe8edf3,
+      roadLine: 0xffce32,
+      trunk: 0x88482f,
+      leaf: 0x00a957,
+      leafLight: 0x2ed866,
+      metal: 0x263447,
+      lamp: 0xffe36a,
+      skin: 0xffa56f,
+      ink: 0x182337,
+      coral: 0xff4f5e,
+      cobalt: 0x3566f5,
+      yellow: 0xffc928,
+      violet: 0x8c4ee8,
+      white: 0xf7f8fa,
+      roof: 0xe83950,
+      roofBlue: 0x3f5bd8,
+      window: 0x1dbce5,
+      tire: 0x141b27,
+      bumper: 0xe9edf2,
+      orange: 0xff7a22,
+      aqua: 0x00d6c9,
+      pink: 0xff62a8,
+      concrete: 0x59677a,
+      industrial: 0x3f4c5f,
+      sand: 0xffd56a,
+      water: 0x087fc7,
+      waterLight: 0x1db9e8,
+      parkDark: 0x0a9f52,
+      outskirts: 0x087bb5,
+      hole: 0x020205,
+      playerRing: 0x13e6d1
+    });
+
+    /**
+     * Grade espacial simples: guarda entidades pela célula do centro e retorna
+     * apenas vizinhos próximos. Isso substitui varreduras globais por frame.
+     */
+    class SpatialGrid {
+      constructor(cellSize) {
+        this.cellSize = cellSize;
+        this.cells = new Map();
+        this.entityKeys = new Map();
+        this.metrics = { queries: 0, candidates: 0, lastCandidates: 0 };
+      }
+
+      keyFor(x, z) {
+        return `${Math.floor(x / this.cellSize)},${Math.floor(z / this.cellSize)}`;
+      }
+
+      insert(entity) {
+        const key = this.keyFor(entity.mesh.position.x, entity.mesh.position.z);
+        if (!this.cells.has(key)) this.cells.set(key, new Set());
+        this.cells.get(key).add(entity);
+        this.entityKeys.set(entity, key);
+      }
+
+      remove(entity) {
+        const key = this.entityKeys.get(entity);
+        if (key === undefined) return;
+        const cell = this.cells.get(key);
+        cell?.delete(entity);
+        if (cell?.size === 0) this.cells.delete(key);
+        this.entityKeys.delete(entity);
+      }
+
+      update(entity, oldX, oldZ) {
+        const oldKey = this.keyFor(oldX, oldZ);
+        const newKey = this.keyFor(entity.mesh.position.x, entity.mesh.position.z);
+        if (oldKey === newKey && this.entityKeys.get(entity) === newKey) return;
+        this.remove(entity);
+        this.insert(entity);
+      }
+
+      queryCircle(x, z, radius) {
+        const minX = Math.floor((x - radius) / this.cellSize);
+        const maxX = Math.floor((x + radius) / this.cellSize);
+        const minZ = Math.floor((z - radius) / this.cellSize);
+        const maxZ = Math.floor((z + radius) / this.cellSize);
+        const result = [];
+
+        for (let cellX = minX; cellX <= maxX; cellX++) {
+          for (let cellZ = minZ; cellZ <= maxZ; cellZ++) {
+            const cell = this.cells.get(`${cellX},${cellZ}`);
+            if (!cell) continue;
+            for (const entity of cell) {
+              const reach = radius + (entity.radius || 0);
+              const dx = entity.mesh.position.x - x;
+              const dz = entity.mesh.position.z - z;
+              if (entity.active && !entity.sinking && dx * dx + dz * dz <= reach * reach) {
+                result.push(entity);
+              }
+            }
+          }
+        }
+
+        this.metrics.queries++;
+        this.metrics.candidates += result.length;
+        this.metrics.lastCandidates = result.length;
+        return result;
+      }
+
+      clear() {
+        this.cells.clear();
+        this.entityKeys.clear();
+        this.resetMetrics();
+      }
+
+      resetMetrics() {
+        this.metrics.queries = 0;
+        this.metrics.candidates = 0;
+        this.metrics.lastCandidates = 0;
+      }
+    }
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const canvas = document.getElementById('game-canvas');
+    const ui = {
+      timer: document.getElementById('timer'),
+      timerStat: document.getElementById('timer-stat'),
+      score: document.getElementById('score'),
+      ranking: document.getElementById('ranking'),
+      rankingList: document.getElementById('ranking-list'),
+      rankingToggle: document.getElementById('ranking-toggle'),
+      killFeed: document.getElementById('kill-feed'),
+      minimap: document.getElementById('minimap'),
+      threatArrow: document.getElementById('threat-arrow'),
+      progress: document.getElementById('progress-bar'),
+      size: document.getElementById('size-label'),
+      next: document.getElementById('next-level'),
+      toast: document.getElementById('toast'),
+      sound: document.getElementById('sound-button'),
+      startScreen: document.getElementById('start-screen'),
+      endScreen: document.getElementById('end-screen'),
+      startButton: document.getElementById('start-button'),
+      restartButton: document.getElementById('restart-button'),
+      finalScore: document.getElementById('final-score'),
+      finalLabel: document.getElementById('final-label'),
+      respawnStatus: document.getElementById('respawn-status'),
+      respawnCount: document.getElementById('respawn-count'),
+      loading: document.getElementById('loading-note')
+    };
+
+    let scene, camera, renderer, world, clock, sunLight;
+    let running = false;
+    let ended = false;
+    let startTime = 0;
+    let score = 0;
+    let soundEnabled = true;
+    let audioContext = null;
+    let lastRankUpdate = 0;
+    let toastTimer = 0;
+    let holePulse = 0;
+    let debugPanel = null;
+    let cityRound = 0;
+    let currentCitySeed = 90421;
+    let lastMinimapUpdate = 0;
+    let lastIndicatorUpdate = 0;
+    let ambientFrame = 0;
+
+    const qualityState = {
+      tier: QUALITY_CONFIG.initialTier,
+      lowFpsSeconds: 0,
+      autoDowngrades: 0,
+      lastReason: 'initial'
+    };
+
+    const spatialGrid = new SpatialGrid(WORLD_CONFIG.spatialCellSize);
+    const performanceMetrics = { frames: 0, elapsed: 0, fps: 60, averageCandidates: 0 };
+    const cityStats = { types: new Set(), countsByDistrict: Object.create(null) };
+    const minimapContext = ui.minimap.getContext('2d');
+    const indicatorProjection = new THREE.Vector3();
+
+    const destructibles = [];
+    const movingEntities = [];
+    const vegetationEntities = [];
+    const sinkingEntities = [];
+    const particles = [];
+    const scenery = [];
+    const keys = Object.create(null);
+    const pointer = new THREE.Vector2();
+    const raycaster = new THREE.Raycaster();
+    const pointerTarget = new THREE.Vector3(HOLE_SPAWNS.player.x, 0, HOLE_SPAWNS.player.z);
+    const pointerHit = new THREE.Vector3();
+    const groundInteractionPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    const activePointer = { down: false, type: 'mouse' };
+    let pointerHasPosition = false;
+
+    const cameraState = {
+      currentHeight: CAMERA_CONFIG.baseHeight,
+      currentDistance: CAMERA_CONFIG.baseDistance,
+      desiredPosition: new THREE.Vector3(),
+      desiredLookTarget: new THREE.Vector3(),
+      lookTarget: new THREE.Vector3()
+    };
+
+    const player = {
+      id: 'player',
+      name: 'VOCÊ',
+      isPlayer: true,
+      score: 0,
+      growthPoints: 0,
+      growthScale: .14,
+      radius: 1.9,
+      baseRadius: 1.9,
+      targetRadius: 1.9,
+      active: true,
+      invulnerableUntil: 0,
+      respawnAt: 0,
+      defeatAt: 0,
+      spawnPoint: HOLE_SPAWNS.player,
+      mesh: null,
+      ring: null,
+      target: pointerTarget,
+      color: PALETTE.playerRing
+    };
+
+    const botNames = ['NOVA', 'PIXEL', 'BOLT', 'MIMO', 'ZIG'];
+    const botColors = [0xff5f68, 0xffc83d, 0x9b6dff, 0x55df78, 0x45a7ff];
+    const BOT_STATES = Object.freeze({ FORAGE: 'FORAGE', HUNT: 'HUNT', FLEE: 'FLEE', WANDER: 'WANDER' });
+    const BOT_PERSONALITIES = Object.freeze([
+      Object.freeze({ id: 'aggressive', label: 'Agressivo', aggression: 1, caution: .42, collector: .55, perception: 44, minDecision: .3, maxDecision: .5 }),
+      Object.freeze({ id: 'cautious', label: 'Cauteloso', aggression: .3, caution: 1, collector: .72, perception: 42, minDecision: .36, maxDecision: .62 }),
+      Object.freeze({ id: 'collector', label: 'Coletor', aggression: .25, caution: .68, collector: 1, perception: 38, minDecision: .42, maxDecision: .7 }),
+      Object.freeze({ id: 'opportunist', label: 'Oportunista', aggression: .82, caution: .72, collector: .62, perception: 46, minDecision: .32, maxDecision: .56 }),
+      Object.freeze({ id: 'balanced', label: 'Equilibrado', aggression: .62, caution: .65, collector: .78, perception: 40, minDecision: .4, maxDecision: .68 })
+    ]);
+    const bots = [];
+
+    // Paleta de materiais compartilhados reduz o custo de renderização.
+    const materials = {};
+    const geometries = {};
+    const particleMaterials = new Map();
+
+    function createMaterials() {
+      // Mapa de três tons cria contraste de desenho animado sem pós-processamento.
+      const toneData = new Uint8Array([70, 165, 255]);
+      const toonGradient = new THREE.DataTexture(toneData, 3, 1, THREE.LuminanceFormat);
+      toonGradient.minFilter = THREE.NearestFilter;
+      toonGradient.magFilter = THREE.NearestFilter;
+      toonGradient.generateMipmaps = false;
+      toonGradient.needsUpdate = true;
+
+      const toon = (color, extra = {}) => new THREE.MeshToonMaterial({ color, gradientMap: toonGradient, ...extra });
+      const shiny = (color, extra = {}) => new THREE.MeshPhongMaterial({
+        color,
+        flatShading: true,
+        shininess: 85,
+        specular: 0xffffff,
+        ...extra
+      });
+
+      Object.assign(materials, {
+        grass: toon(PALETTE.grass), road: toon(PALETTE.road), sidewalk: toon(PALETTE.sidewalk),
+        line: toon(PALETTE.roadLine), trunk: toon(PALETTE.trunk), leaf: toon(PALETTE.leaf),
+        leaf2: toon(PALETTE.leafLight), metal: toon(PALETTE.metal),
+        lamp: shiny(PALETTE.lamp, { emissive: 0x6b4a00 }), skin: toon(PALETTE.skin),
+        dark: toon(PALETTE.ink), red: toon(PALETTE.coral), blue: toon(PALETTE.cobalt),
+        yellow: toon(PALETTE.yellow), purple: toon(PALETTE.violet), white: toon(PALETTE.white),
+        roof: toon(PALETTE.roof), roof2: toon(PALETTE.roofBlue),
+        window: shiny(PALETTE.window, { emissive: 0x063949 }), tire: toon(PALETTE.tire),
+        bumper: shiny(PALETTE.bumper), orange: toon(PALETTE.orange), aqua: toon(PALETTE.aqua),
+        pink: toon(PALETTE.pink), concrete: toon(PALETTE.concrete), steel: shiny(PALETTE.industrial),
+        sand: toon(PALETTE.sand), water: shiny(PALETTE.waterLight, { transparent: true, opacity: .94 }),
+        residentialGround: toon(0x20ac55), downtownGround: toon(0x43516c),
+        parkGround: toon(0x007f3e), industrialGround: toon(0x344154),
+        marinaGround: toon(0xc88f22), outskirts: shiny(PALETTE.outskirts, { shininess: 105 }),
+        black: new THREE.MeshBasicMaterial({ color: PALETTE.hole }),
+        holeRing: new THREE.MeshBasicMaterial({ color: PALETTE.playerRing, transparent: true, opacity: 0.96 })
+      });
+    }
+
+    // Geometrias compartilhadas evitam centenas de alocações idênticas.
+    function createGeometries() {
+      Object.assign(geometries, {
+        worldBackdrop: new THREE.PlaneGeometry(WORLD_CONFIG.width + 180, WORLD_CONFIG.depth + 180),
+        ground: new THREE.PlaneGeometry(WORLD_CONFIG.width + 16, WORLD_CONFIG.depth + 16),
+        roadHorizontal: new THREE.PlaneGeometry(WORLD_CONFIG.width + 8, 8),
+        roadVertical: new THREE.PlaneGeometry(8, WORLD_CONFIG.depth + 8),
+        stripeHorizontal: new THREE.PlaneGeometry(2.5, .16),
+        stripeVertical: new THREE.PlaneGeometry(.16, 2.5),
+        treeTrunk: new THREE.CylinderGeometry(.22, .32, 1.8, 7),
+        treeCrownLarge: new THREE.DodecahedronGeometry(.92, 0),
+        treeCrownSmall: new THREE.DodecahedronGeometry(.62, 0),
+        lampBase: new THREE.CylinderGeometry(.17, .23, .25, 8),
+        lampPole: new THREE.CylinderGeometry(.07, .09, 2.7, 7),
+        lampBulb: new THREE.SphereGeometry(.23, 8, 6),
+        pedestrianBody: new THREE.CylinderGeometry(.20, .25, .78, 7),
+        pedestrianHead: new THREE.SphereGeometry(.22, 8, 6),
+        pedestrianLeg: new THREE.CylinderGeometry(.07, .08, .62, 6),
+        carBody: new THREE.BoxGeometry(2.6, .65, 1.35),
+        carCabin: new THREE.BoxGeometry(1.3, .54, 1.18),
+        carWheel: new THREE.CylinderGeometry(.28, .28, .16, 10),
+        houseBody: new THREE.BoxGeometry(4.2, 3.1, 3.6),
+        houseRoof: new THREE.ConeGeometry(3.05, 2.0, 4),
+        houseDoor: new THREE.BoxGeometry(.9, 1.6, .08),
+        houseWindow: new THREE.BoxGeometry(.75, .72, .08),
+        unitBox: new THREE.BoxGeometry(1, 1, 1),
+        unitCylinder: new THREE.CylinderGeometry(.5, .5, 1, 8),
+        unitCone: new THREE.ConeGeometry(.5, 1, 8),
+        unitSphere: new THREE.SphereGeometry(.5, 10, 8),
+        unitDodeca: new THREE.DodecahedronGeometry(.5, 0),
+        unitTorus: new THREE.TorusGeometry(.5, .11, 6, 12),
+        particle: new THREE.BoxGeometry(.13, .13, .13)
+      });
+    }
+
+    function getPlaneGeometry(key, width, depth) {
+      if (!geometries[key]) geometries[key] = new THREE.PlaneGeometry(width, depth);
+      return geometries[key];
+    }
+
+    function getParticleMaterial(color) {
+      if (!particleMaterials.has(color)) {
+        particleMaterials.set(color, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: .92 }));
+      }
+      return particleMaterials.get(color);
+    }
+
+    // ---------- Inicialização WebGL e física ----------
+    function init() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(PALETTE.sky);
+      // A névoa começa muito além do mapa atual: profundidade sem aparência lavada.
+      scene.fog = new THREE.Fog(PALETTE.fog, 220, 360);
+
+      camera = new THREE.PerspectiveCamera(
+        CAMERA_CONFIG.fov,
+        innerWidth / innerHeight,
+        CAMERA_CONFIG.near,
+        CAMERA_CONFIG.far
+      );
+      camera.position.set(0, CAMERA_CONFIG.baseHeight, CAMERA_CONFIG.baseDistance);
+
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+      renderer.setPixelRatio(Math.min(devicePixelRatio, getQualityProfile().maxPixelRatio));
+      renderer.setSize(innerWidth, innerHeight, false);
+      renderer.shadowMap.enabled = getQualityProfile().shadows;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.outputEncoding = THREE.sRGBEncoding;
+
+      clock = new THREE.Clock();
+      createMaterials();
+      createGeometries();
+      createLights();
+      applyQualityTier(qualityState.tier, 'initial');
+      createPhysics();
+      createCity();
+      createPlayer();
+      initializeCameraFollow();
+      createBots();
+      bindEvents();
+      updateRanking();
+      initDebugPanel();
+      ui.loading.remove();
+      animate();
+    }
+
+    function createLights() {
+      scene.add(new THREE.HemisphereLight(0xc9f4ff, 0x1b552f, 0.68));
+      sunLight = new THREE.DirectionalLight(0xfff0c2, 1.68);
+      sunLight.position.set(-24, 42, 22);
+      sunLight.castShadow = true;
+      sunLight.shadow.mapSize.set(getQualityProfile().shadowMapSize, getQualityProfile().shadowMapSize);
+      sunLight.shadow.camera.left = -48;
+      sunLight.shadow.camera.right = 48;
+      sunLight.shadow.camera.top = 58;
+      sunLight.shadow.camera.bottom = -58;
+      scene.add(sunLight);
+      scene.add(sunLight.target);
+    }
+
+    function getCameraMeasurements() {
+      const mobileHeight = MOBILE_PROFILE ? CAMERA_CONFIG.mobileHeightBonus : 0;
+      const mobileDistance = MOBILE_PROFILE ? CAMERA_CONFIG.mobileDistanceBonus : 0;
+      return {
+        height: clamp(
+          CAMERA_CONFIG.baseHeight + player.radius * CAMERA_CONFIG.growthHeightFactor + mobileHeight,
+          CAMERA_CONFIG.minHeight,
+          CAMERA_CONFIG.maxHeight
+        ),
+        distance: clamp(
+          CAMERA_CONFIG.baseDistance + player.radius * CAMERA_CONFIG.growthDistanceFactor + mobileDistance,
+          CAMERA_CONFIG.minDistance,
+          CAMERA_CONFIG.maxDistance
+        )
+      };
+    }
+
+    function initializeCameraFollow() {
+      const measurements = getCameraMeasurements();
+      cameraState.currentHeight = measurements.height;
+      cameraState.currentDistance = measurements.distance;
+      camera.position.set(
+        player.mesh.position.x,
+        measurements.height,
+        player.mesh.position.z + measurements.distance
+      );
+      cameraState.lookTarget.set(
+        player.mesh.position.x,
+        0,
+        player.mesh.position.z - CAMERA_CONFIG.lookAhead
+      );
+      camera.lookAt(cameraState.lookTarget);
+      updateSunFollow();
+    }
+
+    function updateCamera(dt) {
+      const measurements = getCameraMeasurements();
+      const zoomBlend = 1 - Math.exp(-CAMERA_CONFIG.zoomSmoothing * dt);
+      const followBlend = 1 - Math.exp(-CAMERA_CONFIG.followSmoothing * dt);
+
+      cameraState.currentHeight += (measurements.height - cameraState.currentHeight) * zoomBlend;
+      cameraState.currentDistance += (measurements.distance - cameraState.currentDistance) * zoomBlend;
+      cameraState.desiredPosition.set(
+        player.mesh.position.x,
+        cameraState.currentHeight,
+        player.mesh.position.z + cameraState.currentDistance
+      );
+      cameraState.desiredLookTarget.set(
+        player.mesh.position.x,
+        0,
+        player.mesh.position.z - CAMERA_CONFIG.lookAhead
+      );
+
+      camera.position.lerp(cameraState.desiredPosition, followBlend);
+      cameraState.lookTarget.lerp(cameraState.desiredLookTarget, followBlend);
+      camera.lookAt(cameraState.lookTarget);
+      updateSunFollow();
+    }
+
+    function updateSunFollow() {
+      if (!sunLight || !player.mesh) return;
+      sunLight.position.set(
+        player.mesh.position.x - 24,
+        42 + cameraState.currentHeight * .12,
+        player.mesh.position.z + 22
+      );
+      sunLight.target.position.set(player.mesh.position.x, 0, player.mesh.position.z);
+      sunLight.target.updateMatrixWorld();
+    }
+
+    function createPhysics() {
+      world = new CANNON.World();
+      world.gravity.set(0, -18, 0);
+      world.broadphase = new CANNON.SAPBroadphase(world);
+      world.broadphase.axisIndex = 0;
+      world.allowSleep = true;
+      world.solver.iterations = 7;
+      const groundBody = new CANNON.Body({ mass: 0, shape: new CANNON.Plane() });
+      groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
+      world.addBody(groundBody);
+    }
+
+    function initDebugPanel() {
+      if (!DEBUG_MODE) return;
+      debugPanel = document.createElement('div');
+      debugPanel.className = 'debug-panel';
+      debugPanel.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(debugPanel);
+      window.__CITY_VOID_DEBUG__ = Object.freeze({
+        forceQuality: tier => applyQualityTier(String(tier).toUpperCase(), 'debug'),
+        simulateLowFps: (seconds = 4, fps = 20) => {
+          evaluateAdaptiveQuality(Number(fps), clamp(Number(seconds), 0, 10), true);
+          return getQualitySnapshot();
+        },
+        spawnParticleBurst: (count = 500) => {
+          spawnParticles(player.mesh.position, player.color, Math.max(0, Number(count) || 0));
+          return particles.length;
+        },
+        getQuality: getQualitySnapshot
+      });
+      updateDebugPanel();
+    }
+
+    function getQualityProfile() {
+      return QUALITY_CONFIG.profiles[qualityState.tier];
+    }
+
+    function getQualitySnapshot() {
+      const profile = getQualityProfile();
+      return {
+        tier: qualityState.tier,
+        pixelRatio: renderer?.getPixelRatio() || 0,
+        maxPixelRatio: profile.maxPixelRatio,
+        shadows: renderer?.shadowMap?.enabled ?? profile.shadows,
+        shadowMapSize: sunLight?.shadow?.mapSize?.x || profile.shadowMapSize,
+        particleLimit: profile.particleLimit,
+        particles: particles.length,
+        vegetationFrameStride: profile.vegetationFrameStride,
+        autoDowngrades: qualityState.autoDowngrades,
+        lowFpsSeconds: qualityState.lowFpsSeconds,
+        lastReason: qualityState.lastReason,
+        fps: performanceMetrics.fps,
+        drawCalls: renderer?.info?.render?.calls || 0,
+        movingEntities: movingEntities.filter(entity => entity.active).length,
+        sinkingEntities: sinkingEntities.length
+      };
+    }
+
+    function trimParticlesToLimit(limit) {
+      while (particles.length > limit) {
+        const particle = particles.shift();
+        scene.remove(particle.mesh);
+      }
+    }
+
+    function resetDecorativeTransforms() {
+      vegetationEntities.forEach(entity => {
+        entity.mesh.rotation.x = 0;
+        entity.mesh.rotation.z = 0;
+      });
+      movingEntities.forEach(entity => {
+        if (entity.movement?.kind === 'boat') entity.mesh.rotation.z = 0;
+        entity.mesh.userData.walkLegs?.forEach(leg => { leg.rotation.x = 0; });
+      });
+    }
+
+    function applyQualityTier(tier, reason = 'manual') {
+      if (!QUALITY_CONFIG.profiles[tier]) return false;
+      qualityState.tier = tier;
+      qualityState.lastReason = reason;
+      qualityState.lowFpsSeconds = 0;
+      const profile = getQualityProfile();
+
+      if (renderer) {
+        renderer.setPixelRatio(Math.min(devicePixelRatio, profile.maxPixelRatio));
+        renderer.setSize(innerWidth, innerHeight, false);
+        renderer.shadowMap.enabled = profile.shadows;
+      }
+      if (sunLight) {
+        const sizeChanged = sunLight.shadow.mapSize.x !== profile.shadowMapSize;
+        sunLight.shadow.mapSize.set(profile.shadowMapSize, profile.shadowMapSize);
+        if (sizeChanged && sunLight.shadow.map) {
+          sunLight.shadow.map.dispose();
+          sunLight.shadow.map = null;
+        }
+        sunLight.castShadow = profile.shadows;
+        sunLight.shadow.needsUpdate = true;
+      }
+      if (!profile.decorativeMotion) resetDecorativeTransforms();
+      trimParticlesToLimit(profile.particleLimit);
+      updateDebugPanel();
+      return true;
+    }
+
+    function downgradeQuality(reason = 'adaptive') {
+      const index = QUALITY_CONFIG.order.indexOf(qualityState.tier);
+      if (index <= 0) return false;
+      qualityState.autoDowngrades++;
+      return applyQualityTier(QUALITY_CONFIG.order[index - 1], reason);
+    }
+
+    function evaluateAdaptiveQuality(fps, sampleSeconds, force = false) {
+      if (!force && (!running || document.visibilityState !== 'visible')) return;
+      if (fps >= QUALITY_CONFIG.downgradeFps) {
+        qualityState.lowFpsSeconds = 0;
+        return;
+      }
+      qualityState.lowFpsSeconds += sampleSeconds;
+      if (qualityState.lowFpsSeconds >= QUALITY_CONFIG.downgradeAfterSeconds) {
+        downgradeQuality('adaptive');
+        qualityState.lowFpsSeconds = 0;
+      }
+    }
+
+    function updatePerformanceMetrics(dt) {
+      performanceMetrics.frames++;
+      performanceMetrics.elapsed += dt;
+      if (performanceMetrics.elapsed < 2) return;
+
+      const sampleSeconds = performanceMetrics.elapsed;
+      performanceMetrics.fps = Math.round(performanceMetrics.frames / sampleSeconds);
+      performanceMetrics.averageCandidates = spatialGrid.metrics.queries
+        ? Math.round(spatialGrid.metrics.candidates / spatialGrid.metrics.queries)
+        : 0;
+      evaluateAdaptiveQuality(performanceMetrics.fps, sampleSeconds);
+      performanceMetrics.frames = 0;
+      performanceMetrics.elapsed = 0;
+      updateDebugPanel();
+      spatialGrid.resetMetrics();
+    }
+
+    function updateDebugPanel() {
+      if (!debugPanel) return;
+      const activeObjects = destructibles.reduce((total, obj) => total + (obj.active ? 1 : 0), 0);
+      const aiCounts = bots.reduce((counts, bot) => {
+        counts[bot.state] = (counts[bot.state] || 0) + (bot.active ? 1 : 0);
+        return counts;
+      }, Object.create(null));
+      debugPanel.textContent = [
+        `FPS ${performanceMetrics.fps}`,
+        `QUALIDADE ${qualityState.tier} (${qualityState.lastReason})`,
+        `PIXEL RATIO ${renderer?.getPixelRatio()?.toFixed(2) || '0.00'}`,
+        `SOMBRAS ${renderer?.shadowMap?.enabled ? getQualityProfile().shadowMapSize : 'OFF'}`,
+        `PARTÍCULAS ${particles.length}/${getQualityProfile().particleLimit}`,
+        `MUNDO ${WORLD_CONFIG.width}×${WORLD_CONFIG.depth}`,
+        `SEMENTE ${currentCitySeed}`,
+        `BAIRROS ${DISTRICTS.length}`,
+        `TIPOS ${cityStats.types.size}`,
+        `OBJETOS ${activeObjects}`,
+        `CANDIDATOS Ø ${performanceMetrics.averageCandidates}`,
+        `ÚLTIMA BUSCA ${spatialGrid.metrics.lastCandidates}`,
+        `CÉLULAS ${spatialGrid.cells.size}`,
+        `CORPOS ${world?.bodies?.length || 0}`,
+        `DRAWS ${renderer?.info?.render?.calls || 0}`,
+        `IA C${aiCounts.FORAGE || 0} H${aiCounts.HUNT || 0} F${aiCounts.FLEE || 0} E${aiCounts.WANDER || 0}`,
+        `CÂMERA H ${cameraState.currentHeight.toFixed(1)}`,
+        `CÂMERA D ${cameraState.currentDistance.toFixed(1)}`
+      ].join('\n');
+    }
+
+    // ---------- Construção procedural da cidade ----------
+    const OBJECT_CATALOG = Object.freeze([
+      { id: 'cup', type: 'Copo', value: 1, radius: .25, minimumHoleRadius: 1, districts: ['downtown','park','marina'], weight: 8, placement: 'lot', build: createCup },
+      { id: 'cone', type: 'Cone', value: 1, radius: .32, minimumHoleRadius: 1, districts: ['industrial','downtown'], weight: 8, placement: 'lot', build: createCone },
+      { id: 'crate', type: 'Caixa', value: 1, radius: .42, minimumHoleRadius: 1, districts: ['industrial','marina','downtown'], weight: 7, placement: 'lot', build: createCrate },
+      { id: 'hydrant', type: 'Hidrante', value: 2, radius: .42, minimumHoleRadius: 1.1, districts: ['residential','downtown'], weight: 5, placement: 'lot', build: createHydrant },
+      { id: 'pedestrian', type: 'Pedestre', value: 1, radius: .45, minimumHoleRadius: 1, districts: ['downtown','residential','park','marina'], weight: 10, placement: 'lot', build: createPedestrian },
+      { id: 'sign', type: 'Placa', value: 2, radius: .45, minimumHoleRadius: 1.1, districts: ['downtown','industrial','residential'], weight: 5, placement: 'lot', build: createSign },
+      { id: 'trash', type: 'Lixeira', value: 2, radius: .5, minimumHoleRadius: 1.1, districts: ['downtown','park','marina'], weight: 5, placement: 'lot', build: createTrashCan },
+      { id: 'bench', type: 'Banco', value: 3, radius: .72, minimumHoleRadius: 1.25, districts: ['park','residential','marina'], weight: 6, placement: 'lot', build: createBench },
+      { id: 'lamp', type: 'Poste', value: 2, radius: .45, minimumHoleRadius: 1.1, districts: ['residential','downtown','park','marina'], weight: 6, placement: 'lot', build: createLampPost },
+      { id: 'bush', type: 'Arbusto', value: 2, radius: .62, minimumHoleRadius: 1.15, districts: ['residential','park'], weight: 8, placement: 'lot', build: createBush },
+      { id: 'tree', type: 'Árvore', value: 3, radius: .82, minimumHoleRadius: 1.35, districts: ['park','residential','downtown'], weight: 9, placement: 'lot', build: createTree },
+      { id: 'palm', type: 'Palmeira', value: 4, radius: .92, minimumHoleRadius: 1.5, districts: ['marina','park'], weight: 8, placement: 'lot', build: createPalm },
+      { id: 'motorcycle', type: 'Moto', value: 4, radius: .9, minimumHoleRadius: 1.45, districts: ['downtown','residential','industrial'], weight: 4, placement: 'road', build: createMotorcycle },
+      { id: 'car', type: 'Carro', value: 5, radius: 1.35, minimumHoleRadius: 1.8, districts: ['residential','downtown','industrial'], weight: 7, placement: 'road', build: createCar },
+      { id: 'taxi', type: 'Táxi', value: 6, radius: 1.4, minimumHoleRadius: 1.9, districts: ['downtown','marina'], weight: 5, placement: 'road', build: createTaxi },
+      { id: 'van', type: 'Van', value: 7, radius: 1.6, minimumHoleRadius: 2.1, districts: ['industrial','residential','downtown'], weight: 4, placement: 'road', build: createVan },
+      { id: 'kiosk', type: 'Quiosque', value: 8, radius: 1.75, minimumHoleRadius: 2.2, districts: ['marina','park','downtown'], weight: 3, placement: 'lot', build: createKiosk },
+      { id: 'fountain', type: 'Fonte', value: 9, radius: 1.9, minimumHoleRadius: 2.35, districts: ['park','downtown'], weight: 2, placement: 'lot', build: createFountain },
+      { id: 'container', type: 'Contêiner', value: 8, radius: 1.7, minimumHoleRadius: 2.2, districts: ['industrial','marina'], weight: 6, placement: 'lot', build: createContainer },
+      { id: 'truck', type: 'Caminhão', value: 11, radius: 2.2, minimumHoleRadius: 2.8, districts: ['industrial','downtown'], weight: 3, placement: 'road', build: createTruck },
+      { id: 'bus', type: 'Ônibus', value: 13, radius: 2.5, minimumHoleRadius: 3.1, districts: ['downtown','residential'], weight: 2, placement: 'road', build: createBus },
+      { id: 'house', type: 'Casa', value: 14, radius: 2.5, minimumHoleRadius: 3.1, districts: ['residential'], weight: 5, placement: 'lot', build: createHouse },
+      { id: 'shop', type: 'Loja', value: 16, radius: 2.8, minimumHoleRadius: 3.4, districts: ['downtown','residential'], weight: 4, placement: 'lot', build: createShop },
+      { id: 'pool', type: 'Piscina', value: 12, radius: 2.4, minimumHoleRadius: 3, districts: ['residential','marina'], weight: 2, placement: 'lot', build: createPool },
+      { id: 'warehouse', type: 'Galpão', value: 22, radius: 3.8, minimumHoleRadius: 4.5, districts: ['industrial'], weight: 3, placement: 'lot', build: createWarehouse },
+      { id: 'smallBuilding', type: 'Prédio', value: 22, radius: 3.4, minimumHoleRadius: 4.2, districts: ['downtown','residential'], weight: 3, placement: 'lot', build: createSmallBuilding },
+      { id: 'largeBuilding', type: 'Prédio grande', value: 35, radius: 4.5, minimumHoleRadius: 5.4, districts: ['downtown'], weight: 2, placement: 'lot', build: createLargeBuilding },
+      { id: 'boat', type: 'Barco', value: 10, radius: 1.9, minimumHoleRadius: 2.4, districts: ['marina'], weight: 7, placement: 'water', build: createBoat },
+      { id: 'crane', type: 'Guindaste', value: 40, radius: 5, minimumHoleRadius: 6, districts: ['industrial'], weight: 1, placement: 'lot', build: createCrane },
+      { id: 'tower', type: 'Torre', value: 45, radius: 5.3, minimumHoleRadius: 6.3, districts: ['downtown'], weight: 1, placement: 'lot', build: createTower }
+    ]);
+
+    function createCity() {
+      currentCitySeed = 90421 + cityRound * 7919;
+      const rng = mulberry32(currentCitySeed);
+      cityStats.types.clear();
+      cityStats.countsByDistrict = Object.create(null);
+
+      const backdrop = new THREE.Mesh(geometries.worldBackdrop, materials.outskirts);
+      backdrop.rotation.x = -Math.PI / 2;
+      backdrop.position.y = -.06;
+      backdrop.receiveShadow = true;
+      scene.add(backdrop);
+      scenery.push(backdrop);
+
+      const ground = new THREE.Mesh(geometries.ground, materials.grass);
+      ground.rotation.x = -Math.PI / 2;
+      ground.receiveShadow = true;
+      scene.add(ground);
+      scenery.push(ground);
+
+      DISTRICTS.forEach(district => createDistrictGround(district));
+      WORLD_CONFIG.horizontalRoads.forEach(z => createRoad(0, z, WORLD_CONFIG.width + 8, WORLD_CONFIG.roadWidth, true));
+      WORLD_CONFIG.verticalRoads.forEach(x => createRoad(x, 0, WORLD_CONFIG.roadWidth, WORLD_CONFIG.depth + 8, false));
+
+      const occupied = [
+        { x: HOLE_SPAWNS.player.x, z: HOLE_SPAWNS.player.z, r: 5 },
+        ...HOLE_SPAWNS.bots.map(spawn => ({ x: spawn.x, z: spawn.z, r: 5 }))
+      ];
+
+      DISTRICTS.forEach(district => populateDistrict(district, rng, occupied));
+      updateDebugPanel();
+    }
+
+    function createDistrictGround(district) {
+      const width = district.xMax - district.xMin;
+      const depth = district.zMax - district.zMin;
+      const patch = new THREE.Mesh(
+        getPlaneGeometry(`district-${district.id}`, width, depth),
+        materials[district.material]
+      );
+      patch.rotation.x = -Math.PI / 2;
+      patch.position.set((district.xMin + district.xMax) / 2, .006, (district.zMin + district.zMax) / 2);
+      patch.receiveShadow = true;
+      scene.add(patch);
+      scenery.push(patch);
+    }
+
+    function populateDistrict(district, rng, occupied) {
+      const available = OBJECT_CATALOG.filter(definition => definition.districts.includes(district.id));
+      let placed = 0;
+      let attempts = 0;
+
+      // Garante que todos os tipos tenham ao menos uma aparição no bairro principal.
+      for (const definition of available.filter(item => item.districts[0] === district.id)) {
+        if (placeCatalogObject(definition, district, rng, occupied)) placed++;
+      }
+
+      while (placed < district.targetCount && attempts < district.targetCount * 35) {
+        attempts++;
+        const definition = chooseWeighted(available, rng);
+        if (placeCatalogObject(definition, district, rng, occupied)) placed++;
+      }
+      cityStats.countsByDistrict[district.id] = placed;
+    }
+
+    function chooseWeighted(items, rng) {
+      const total = items.reduce((sum, item) => sum + item.weight, 0);
+      let cursor = rng() * total;
+      for (const item of items) {
+        cursor -= item.weight;
+        if (cursor <= 0) return item;
+      }
+      return items[items.length - 1];
+    }
+
+    function placeCatalogObject(definition, district, rng, occupied) {
+      const position = findDistrictSpot(rng, district, definition, occupied);
+      if (!position) return false;
+      const variant = Math.floor(rng() * 1000);
+      const objectMesh = definition.build(variant);
+      objectMesh.rotation.y = definition.placement === 'road'
+        ? getRoadRotation(position.x, position.z)
+        : Math.floor(rng() * 4) * Math.PI / 2;
+
+      occupied.push({ x: position.x, z: position.z, r: definition.radius + .2 });
+      addDestructible(definition, position.x, position.z, objectMesh, district.id);
+      cityStats.types.add(definition.id);
+      return true;
+    }
+
+    function findDistrictSpot(rng, district, definition, occupied) {
+      const margin = Math.max(1, definition.radius + .5);
+      for (let tries = 0; tries < 160; tries++) {
+        const x = district.xMin + margin + rng() * Math.max(1, district.xMax - district.xMin - margin * 2);
+        const z = district.zMin + margin + rng() * Math.max(1, district.zMax - district.zMin - margin * 2);
+        const onRoad = isOnRoad(x, z, definition.radius * .35);
+
+        if (definition.placement === 'road' && !onRoad) continue;
+        if ((definition.placement === 'lot' || definition.placement === 'water') && onRoad) continue;
+        if (definition.placement === 'water' && district.id !== 'marina') continue;
+        const collides = occupied.some(item => Math.hypot(item.x - x, item.z - z) < item.r + definition.radius + .35);
+        if (!collides) return { x, z };
+      }
+      return null;
+    }
+
+    function isOnRoad(x, z, extra = 0) {
+      const halfWidth = WORLD_CONFIG.roadWidth / 2 + extra;
+      return WORLD_CONFIG.verticalRoads.some(roadX => Math.abs(x - roadX) < halfWidth) ||
+             WORLD_CONFIG.horizontalRoads.some(roadZ => Math.abs(z - roadZ) < halfWidth);
+    }
+
+    function getRoadRotation(x, z) {
+      const verticalDistance = Math.min(...WORLD_CONFIG.verticalRoads.map(roadX => Math.abs(x - roadX)));
+      const horizontalDistance = Math.min(...WORLD_CONFIG.horizontalRoads.map(roadZ => Math.abs(z - roadZ)));
+      return verticalDistance < horizontalDistance ? Math.PI / 2 : 0;
+    }
+
+    function createRoad(x, z, w, d, horizontal) {
+      const road = new THREE.Mesh(
+        horizontal ? geometries.roadHorizontal : geometries.roadVertical,
+        materials.road
+      );
+      road.rotation.x = -Math.PI / 2;
+      road.position.set(x, .02, z);
+      road.receiveShadow = true;
+      scene.add(road);
+      scenery.push(road);
+
+      const stripeCount = Math.floor((horizontal ? w : d) / 7);
+      for (let i = 0; i < stripeCount; i++) {
+        const stripe = new THREE.Mesh(horizontal ? geometries.stripeHorizontal : geometries.stripeVertical, materials.line);
+        stripe.rotation.x = -Math.PI / 2;
+        stripe.position.set(horizontal ? -w / 2 + 3.5 + i * 7 : x, .04, horizontal ? z : -d / 2 + 3.5 + i * 7);
+        scene.add(stripe);
+        scenery.push(stripe);
+      }
+    }
+
+    function mesh(geometry, material, x, y, z, parent) {
+      const item = new THREE.Mesh(geometry, material);
+      item.position.set(x, y, z);
+      item.castShadow = true;
+      item.receiveShadow = true;
+      parent.add(item);
+      return item;
+    }
+
+    function scaledMesh(geometry, material, x, y, z, sx, sy, sz, parent) {
+      const item = mesh(geometry, material, x, y, z, parent);
+      item.scale.set(sx, sy, sz);
+      return item;
+    }
+
+    function createTree(index) {
+      const group = new THREE.Group();
+      mesh(geometries.treeTrunk, materials.trunk, 0, .9, 0, group);
+      mesh(geometries.treeCrownLarge, index % 2 ? materials.leaf2 : materials.leaf, 0, 2.05, 0, group);
+      mesh(geometries.treeCrownSmall, materials.leaf2, .38, 2.45, -.12, group);
+      group.userData.swayPhase = index * .73;
+      group.userData.height = 3.1;
+      return group;
+    }
+
+    function createLampPost() {
+      const group = new THREE.Group();
+      mesh(geometries.lampBase, materials.metal, 0, .13, 0, group);
+      mesh(geometries.lampPole, materials.metal, 0, 1.48, 0, group);
+      mesh(geometries.lampBulb, materials.lamp, 0, 2.88, 0, group);
+      group.userData.height = 3.15;
+      return group;
+    }
+
+    function createPedestrian(index) {
+      const group = new THREE.Group();
+      const shirt = [materials.red, materials.blue, materials.yellow, materials.purple, materials.orange, materials.aqua][index % 6];
+      mesh(geometries.pedestrianBody, shirt, 0, .92, 0, group);
+      mesh(geometries.pedestrianHead, materials.skin, 0, 1.48, 0, group);
+      const leftLeg = mesh(geometries.pedestrianLeg, materials.dark, -.12, .31, 0, group);
+      const rightLeg = mesh(geometries.pedestrianLeg, materials.dark, .12, .31, 0, group);
+      group.userData.walkLegs = [leftLeg, rightLeg];
+      group.rotation.y = index * 1.7;
+      group.userData.height = 1.72;
+      return group;
+    }
+
+    function createCar(index) {
+      const group = new THREE.Group();
+      group.userData.wheels = [];
+      const paint = [materials.red, materials.blue, materials.yellow, materials.purple][index % 4];
+      mesh(geometries.carBody, paint, 0, .58, 0, group);
+      mesh(geometries.carCabin, materials.window, -.15, 1.13, 0, group);
+      [[-.78,-.68],[.78,-.68],[-.78,.68],[.78,.68]].forEach(p => {
+        const wheel = mesh(geometries.carWheel, materials.tire, p[0], .36, p[1], group);
+        wheel.rotation.x = Math.PI / 2;
+        group.userData.wheels.push(wheel);
+      });
+      group.userData.height = 1.5;
+      return group;
+    }
+
+    function createHouse(index) {
+      const group = new THREE.Group();
+      const wall = index % 3 === 0 ? materials.yellow : index % 3 === 1 ? materials.white : materials.blue;
+      mesh(geometries.houseBody, wall, 0, 1.55, 0, group);
+      const roof = mesh(geometries.houseRoof, index % 2 ? materials.roof2 : materials.roof, 0, 4.05, 0, group);
+      roof.rotation.y = Math.PI / 4;
+      mesh(geometries.houseDoor, materials.trunk, 0, .8, 1.84, group);
+      mesh(geometries.houseWindow, materials.window, -1.2, 1.9, 1.84, group);
+      mesh(geometries.houseWindow, materials.window, 1.2, 1.9, 1.84, group);
+      group.userData.height = 5.1;
+      return group;
+    }
+
+    function createCup(index) {
+      const group = new THREE.Group();
+      const color = [materials.red, materials.blue, materials.yellow, materials.aqua][index % 4];
+      scaledMesh(geometries.unitCylinder, color, 0, .28, 0, .32, .56, .32, group);
+      const rim = scaledMesh(geometries.unitTorus, materials.white, 0, .58, 0, .34, .34, .34, group);
+      rim.rotation.x = Math.PI / 2;
+      group.userData.height = .68;
+      return group;
+    }
+
+    function createCone() {
+      const group = new THREE.Group();
+      scaledMesh(geometries.unitBox, materials.white, 0, .05, 0, .75, .1, .75, group);
+      scaledMesh(geometries.unitCone, materials.orange, 0, .58, 0, .58, 1.08, .58, group);
+      group.userData.height = 1.15;
+      return group;
+    }
+
+    function createCrate(index) {
+      const group = new THREE.Group();
+      const color = index % 3 === 0 ? materials.orange : index % 3 === 1 ? materials.trunk : materials.aqua;
+      scaledMesh(geometries.unitBox, color, 0, .42, 0, .84, .84, .84, group);
+      group.userData.height = .84;
+      return group;
+    }
+
+    function createHydrant() {
+      const group = new THREE.Group();
+      scaledMesh(geometries.unitCylinder, materials.red, 0, .48, 0, .5, .86, .5, group);
+      scaledMesh(geometries.unitSphere, materials.red, 0, .93, 0, .48, .32, .48, group);
+      scaledMesh(geometries.unitCylinder, materials.bumper, -.4, .55, 0, .22, .5, .22, group).rotation.z = Math.PI / 2;
+      scaledMesh(geometries.unitCylinder, materials.bumper, .4, .55, 0, .22, .5, .22, group).rotation.z = Math.PI / 2;
+      group.userData.height = 1.12;
+      return group;
+    }
+
+    function createSign(index) {
+      const group = new THREE.Group();
+      scaledMesh(geometries.unitCylinder, materials.metal, 0, .9, 0, .13, 1.8, .13, group);
+      const color = [materials.blue, materials.red, materials.yellow][index % 3];
+      scaledMesh(geometries.unitBox, color, 0, 1.72, 0, 1.05, .62, .14, group);
+      group.userData.height = 2.05;
+      return group;
+    }
+
+    function createTrashCan(index) {
+      const group = new THREE.Group();
+      const color = index % 2 ? materials.metal : materials.aqua;
+      scaledMesh(geometries.unitCylinder, color, 0, .46, 0, .64, .86, .64, group);
+      scaledMesh(geometries.unitCylinder, materials.dark, 0, .92, 0, .7, .12, .7, group);
+      group.userData.height = 1;
+      return group;
+    }
+
+    function createBench(index) {
+      const group = new THREE.Group();
+      const wood = index % 2 ? materials.orange : materials.trunk;
+      scaledMesh(geometries.unitBox, wood, 0, .58, 0, 1.55, .18, .58, group);
+      scaledMesh(geometries.unitBox, wood, 0, 1.05, -.25, 1.55, .62, .16, group);
+      scaledMesh(geometries.unitBox, materials.metal, -.58, .28, 0, .13, .56, .42, group);
+      scaledMesh(geometries.unitBox, materials.metal, .58, .28, 0, .13, .56, .42, group);
+      group.userData.height = 1.36;
+      return group;
+    }
+
+    function createBush(index) {
+      const group = new THREE.Group();
+      scaledMesh(geometries.unitDodeca, index % 2 ? materials.leaf : materials.leaf2, -.28, .55, 0, 1.0, 1.05, 1.0, group);
+      scaledMesh(geometries.unitDodeca, materials.leaf2, .35, .48, .08, .85, .9, .85, group);
+      group.userData.height = 1.12;
+      return group;
+    }
+
+    function createPalm(index) {
+      const group = new THREE.Group();
+      scaledMesh(geometries.unitCylinder, materials.trunk, 0, 1.65, 0, .34, 3.3, .34, group);
+      for (let i = 0; i < 4; i++) {
+        const crown = scaledMesh(geometries.unitDodeca, i % 2 ? materials.leaf2 : materials.leaf, 0, 3.45, 0, 1.25, .42, .66, group);
+        crown.rotation.y = i * Math.PI / 2 + index * .1;
+      }
+      group.userData.swayPhase = index * .61;
+      group.userData.height = 3.85;
+      return group;
+    }
+
+    function createMotorcycle(index) {
+      const group = new THREE.Group();
+      group.userData.wheels = [];
+      const paint = [materials.red, materials.blue, materials.yellow, materials.purple][index % 4];
+      scaledMesh(geometries.unitBox, paint, 0, .48, 0, 1.05, .32, .42, group);
+      scaledMesh(geometries.unitBox, materials.metal, .22, .78, 0, .18, .48, .18, group).rotation.z = -.45;
+      [-.48, .48].forEach(x => group.userData.wheels.push(mesh(geometries.unitTorus, materials.tire, x, .3, 0, group)));
+      group.userData.height = 1.05;
+      return group;
+    }
+
+    function createTaxi(index) {
+      const group = createCar(index);
+      group.children[0].material = materials.yellow;
+      scaledMesh(geometries.unitBox, materials.white, 0, 1.5, 0, .48, .18, .32, group);
+      group.userData.height = 1.65;
+      return group;
+    }
+
+    function createVan(index) {
+      const group = new THREE.Group();
+      const paint = [materials.white, materials.aqua, materials.orange][index % 3];
+      scaledMesh(geometries.unitBox, paint, 0, .85, 0, 2.5, 1.35, 1.25, group);
+      scaledMesh(geometries.unitBox, materials.window, .62, 1.25, 0, .85, .48, 1.27, group);
+      addVehicleWheels(group, 1.9, .66);
+      group.userData.height = 1.55;
+      return group;
+    }
+
+    function createKiosk(index) {
+      const group = new THREE.Group();
+      const body = [materials.orange, materials.aqua, materials.pink][index % 3];
+      scaledMesh(geometries.unitBox, body, 0, 1.05, 0, 2.4, 2.1, 2.0, group);
+      const roof = scaledMesh(geometries.unitCone, materials.yellow, 0, 2.55, 0, 3.2, 1.15, 3.2, group);
+      roof.rotation.y = Math.PI / 4;
+      scaledMesh(geometries.unitBox, materials.window, 0, 1.35, 1.02, 1.15, .72, .08, group);
+      group.userData.height = 3.15;
+      return group;
+    }
+
+    function createFountain() {
+      const group = new THREE.Group();
+      scaledMesh(geometries.unitCylinder, materials.concrete, 0, .18, 0, 3.2, .36, 3.2, group);
+      scaledMesh(geometries.unitCylinder, materials.water, 0, .39, 0, 2.75, .12, 2.75, group);
+      scaledMesh(geometries.unitCylinder, materials.concrete, 0, .85, 0, .36, 1.15, .36, group);
+      scaledMesh(geometries.unitSphere, materials.water, 0, 1.48, 0, .54, .54, .54, group);
+      group.userData.height = 1.78;
+      return group;
+    }
+
+    function createContainer(index) {
+      const group = new THREE.Group();
+      const paint = [materials.red, materials.blue, materials.orange, materials.aqua][index % 4];
+      scaledMesh(geometries.unitBox, paint, 0, .8, 0, 2.9, 1.6, 1.45, group);
+      scaledMesh(geometries.unitBox, materials.metal, 1.47, .8, 0, .08, 1.45, 1.25, group);
+      group.userData.height = 1.65;
+      return group;
+    }
+
+    function createTruck(index) {
+      const group = new THREE.Group();
+      const paint = [materials.red, materials.blue, materials.orange][index % 3];
+      scaledMesh(geometries.unitBox, materials.white, -.75, 1.15, 0, 2.6, 1.75, 1.65, group);
+      scaledMesh(geometries.unitBox, paint, 1.05, .85, 0, 1.45, 1.25, 1.58, group);
+      scaledMesh(geometries.unitBox, materials.window, 1.52, 1.15, 0, .5, .48, 1.6, group);
+      addVehicleWheels(group, 2.9, .85);
+      group.userData.height = 2.05;
+      return group;
+    }
+
+    function createBus(index) {
+      const group = new THREE.Group();
+      const paint = [materials.yellow, materials.blue, materials.aqua][index % 3];
+      scaledMesh(geometries.unitBox, paint, 0, 1.15, 0, 4.2, 1.8, 1.55, group);
+      scaledMesh(geometries.unitBox, materials.window, 0, 1.52, .79, 3.35, .55, .08, group);
+      scaledMesh(geometries.unitBox, materials.window, 0, 1.52, -.79, 3.35, .55, .08, group);
+      addVehicleWheels(group, 3.35, .82);
+      group.userData.height = 2.08;
+      return group;
+    }
+
+    function addVehicleWheels(group, spreadX, spreadZ) {
+      group.userData.wheels ||= [];
+      [-spreadX / 2, spreadX / 2].forEach(x => {
+        [-spreadZ, spreadZ].forEach(z => {
+          const wheel = scaledMesh(geometries.unitCylinder, materials.tire, x, .38, z, .34, .22, .34, group);
+          wheel.rotation.x = Math.PI / 2;
+          group.userData.wheels.push(wheel);
+        });
+      });
+    }
+
+    function createShop(index) {
+      const group = new THREE.Group();
+      const wall = [materials.orange, materials.aqua, materials.pink, materials.yellow][index % 4];
+      scaledMesh(geometries.unitBox, wall, 0, 1.55, 0, 4.6, 3.1, 3.5, group);
+      scaledMesh(geometries.unitBox, materials.window, 0, 1.55, 1.78, 2.4, 1.15, .08, group);
+      scaledMesh(geometries.unitBox, materials.white, 0, 2.45, 2.05, 3.2, .24, .95, group).rotation.x = -.25;
+      group.userData.height = 3.25;
+      return group;
+    }
+
+    function createPool() {
+      const group = new THREE.Group();
+      scaledMesh(geometries.unitBox, materials.concrete, 0, .1, 0, 4.6, .2, 3.5, group);
+      scaledMesh(geometries.unitBox, materials.water, 0, .23, 0, 4.05, .1, 2.95, group);
+      group.userData.height = .35;
+      return group;
+    }
+
+    function createWarehouse(index) {
+      const group = new THREE.Group();
+      const wall = index % 2 ? materials.concrete : materials.steel;
+      scaledMesh(geometries.unitBox, wall, 0, 1.9, 0, 6.4, 3.8, 5.2, group);
+      const roof = scaledMesh(geometries.unitCone, materials.dark, 0, 4.3, 0, 7.4, 1.25, 6.2, group);
+      roof.rotation.y = Math.PI / 4;
+      scaledMesh(geometries.unitBox, materials.window, 0, 1.5, 2.62, 2.4, 1.6, .08, group);
+      group.userData.height = 4.9;
+      return group;
+    }
+
+    function createSmallBuilding(index) {
+      const group = new THREE.Group();
+      const wall = [materials.blue, materials.orange, materials.aqua, materials.white][index % 4];
+      scaledMesh(geometries.unitBox, wall, 0, 2.8, 0, 4.5, 5.6, 4.2, group);
+      [-1.2, 0, 1.2].forEach(x => scaledMesh(geometries.unitBox, materials.window, x, 3.3, 2.12, .72, .82, .08, group));
+      group.userData.height = 5.7;
+      return group;
+    }
+
+    function createLargeBuilding(index) {
+      const group = new THREE.Group();
+      const wall = [materials.blue, materials.purple, materials.concrete][index % 3];
+      scaledMesh(geometries.unitBox, wall, 0, 5, 0, 6.2, 10, 6.2, group);
+      [-1.8, 0, 1.8].forEach(x => {
+        scaledMesh(geometries.unitBox, materials.window, x, 4, 3.12, .95, 1.25, .08, group);
+        scaledMesh(geometries.unitBox, materials.window, x, 7, 3.12, .95, 1.25, .08, group);
+      });
+      group.userData.height = 10.1;
+      return group;
+    }
+
+    function createBoat(index) {
+      const group = new THREE.Group();
+      const hull = [materials.red, materials.blue, materials.yellow][index % 3];
+      scaledMesh(geometries.unitBox, hull, 0, .42, 0, 2.8, .62, 1.15, group);
+      scaledMesh(geometries.unitCylinder, materials.trunk, 0, 1.42, 0, .13, 2.05, .13, group);
+      const sail = scaledMesh(geometries.unitCone, materials.white, .52, 1.65, 0, 1.05, 1.85, .16, group);
+      sail.rotation.z = -.2;
+      group.userData.height = 2.6;
+      return group;
+    }
+
+    function createCrane() {
+      const group = new THREE.Group();
+      scaledMesh(geometries.unitBox, materials.concrete, 0, .25, 0, 3.4, .5, 3.4, group);
+      scaledMesh(geometries.unitBox, materials.yellow, 0, 4.4, 0, .72, 8.4, .72, group);
+      scaledMesh(geometries.unitBox, materials.yellow, 2.7, 8.25, 0, 6.1, .42, .46, group);
+      scaledMesh(geometries.unitCylinder, materials.metal, 5.4, 5.8, 0, .1, 4.6, .1, group);
+      scaledMesh(geometries.unitBox, materials.metal, 5.4, 3.45, 0, .85, .25, .85, group);
+      group.userData.height = 8.6;
+      return group;
+    }
+
+    function createTower(index) {
+      const group = new THREE.Group();
+      const wall = index % 2 ? materials.purple : materials.blue;
+      scaledMesh(geometries.unitBox, wall, 0, 6.2, 0, 5.4, 12.4, 5.4, group);
+      scaledMesh(geometries.unitCylinder, materials.window, 0, 12.8, 0, 3.8, .8, 3.8, group);
+      scaledMesh(geometries.unitCone, materials.yellow, 0, 14.0, 0, 3.2, 2.2, 3.2, group);
+      group.userData.height = 15.2;
+      return group;
+    }
+
+    function addDestructible(definition, x, z, objectMesh, districtId) {
+      objectMesh.position.set(x, 0, z);
+      scene.add(objectMesh);
+
+      // Corpo estático do Cannon representa a área ocupada e é removido ao ser engolido.
+      const height = objectMesh.userData.height || definition.radius * 2;
+      const body = new CANNON.Body({ mass: 0 });
+      body.allowSleep = true;
+      body.addShape(new CANNON.Box(new CANNON.Vec3(definition.radius, height / 2, definition.radius)));
+      body.position.set(x, height / 2, z);
+      world.addBody(body);
+
+      const entity = {
+        catalogId: definition.id,
+        districtId,
+        type: definition.type,
+        mesh: objectMesh,
+        body,
+        value: definition.value,
+        radius: definition.radius,
+        minimumHoleRadius: definition.minimumHoleRadius,
+        height,
+        active: true,
+        sinking: false,
+        sinkT: 0,
+        sinkTarget: null,
+        eater: null,
+        movement: null,
+        ambientPhase: (Math.abs(x * 13.17 + z * 7.31) % 10) * .63
+      };
+
+      if (definition.placement === 'road') {
+        const speedByType = { motorcycle: 1.8, car: 1.25, taxi: 1.35, van: .95, truck: .72, bus: .68 };
+        entity.movement = {
+          kind: 'traffic',
+          axis: Math.abs(Math.sin(objectMesh.rotation.y)) > .5 ? 'z' : 'x',
+          direction: Math.sin(x * 12.989 + z * 78.233) >= 0 ? 1 : -1,
+          speed: speedByType[definition.id] || 1
+        };
+      } else if (definition.id === 'pedestrian') {
+        entity.movement = {
+          kind: 'pedestrian',
+          originX: x,
+          originZ: z,
+          angle: entity.ambientPhase,
+          range: 1.4 + entity.ambientPhase % .8,
+          speed: .8 + entity.ambientPhase % .5,
+          time: entity.ambientPhase
+        };
+      } else if (definition.id === 'boat') {
+        entity.movement = { kind: 'boat', direction: Math.sin(x + z) >= 0 ? 1 : -1, speed: .5 };
+      }
+      destructibles.push(entity);
+      if (entity.movement) movingEntities.push(entity);
+      if (definition.id === 'tree' || definition.id === 'palm') vegetationEntities.push(entity);
+      spatialGrid.insert(entity);
+    }
+
+    function mulberry32(seed) {
+      return function() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    // ---------- Buracos do jogador e bots ----------
+    function makeHole(color, radius, label) {
+      const group = new THREE.Group();
+      const disk = new THREE.Mesh(new THREE.CircleGeometry(1, 48), materials.black.clone());
+      disk.rotation.x = -Math.PI / 2;
+      disk.position.y = .045;
+      group.add(disk);
+
+      const ringMaterial = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: .92 });
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(1, .09, 10, 48), ringMaterial);
+      ring.rotation.x = Math.PI / 2;
+      ring.position.y = .07;
+      group.add(ring);
+
+      const aura = new THREE.Mesh(
+        new THREE.TorusGeometry(1, .035, 6, 36),
+        new THREE.MeshBasicMaterial({ color, transparent: true, opacity: .34 })
+      );
+      aura.rotation.x = Math.PI / 2;
+      aura.position.y = .065;
+      aura.scale.setScalar(1.18);
+      group.add(aura);
+
+      const statusRing = new THREE.Mesh(
+        new THREE.TorusGeometry(1, .055, 6, 36),
+        new THREE.MeshBasicMaterial({ color: 0x3cff76, transparent: true, opacity: .95 })
+      );
+      statusRing.rotation.x = Math.PI / 2;
+      statusRing.position.y = .075;
+      statusRing.scale.setScalar(1.3);
+      statusRing.visible = false;
+      group.add(statusRing);
+
+      const shadow = new THREE.Mesh(new THREE.CircleGeometry(1.18, 40), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: .13 }));
+      shadow.rotation.x = -Math.PI / 2;
+      shadow.position.y = .022;
+      group.add(shadow);
+
+      group.scale.setScalar(radius);
+      group.userData.label = label;
+      scene.add(group);
+      return { group, ring, aura, statusRing };
+    }
+
+    function createPlayer() {
+      const hole = makeHole(player.color, player.radius, 'VOCÊ');
+      player.mesh = hole.group;
+      player.ring = hole.ring;
+      player.aura = hole.aura;
+      player.statusRing = hole.statusRing;
+      player.mesh.position.set(HOLE_SPAWNS.player.x, 0, HOLE_SPAWNS.player.z);
+      pointerTarget.copy(player.mesh.position);
+    }
+
+    function createBots() {
+      botNames.forEach((name, i) => {
+        const radius = 1.25 + i * .04;
+        const hole = makeHole(botColors[i], radius, name);
+        const spawn = HOLE_SPAWNS.bots[i];
+        const personality = BOT_PERSONALITIES[i];
+        hole.group.position.set(spawn.x, 0, spawn.z);
+        bots.push({
+          id: `bot-${i}`,
+          name,
+          isPlayer: false,
+          score: 0,
+          growthPoints: 0,
+          growthScale: .09,
+          radius,
+          baseRadius: radius,
+          targetRadius: radius,
+          active: true,
+          invulnerableUntil: 0,
+          respawnAt: 0,
+          defeatAt: 0,
+          spawnPoint: spawn,
+          personality,
+          state: BOT_STATES.WANDER,
+          stateHistory: new Set([BOT_STATES.WANDER]),
+          targetObject: null,
+          targetHole: null,
+          threatHole: null,
+          lastDecisionAt: -1,
+          mesh: hole.group,
+          ring: hole.ring,
+          aura: hole.aura,
+          statusRing: hole.statusRing,
+          target: new THREE.Vector3(spawn.x, 0, spawn.z), speed: 5 + i * .18,
+          thinkAt: 0, color: botColors[i]
+        });
+      });
+    }
+
+    // ---------- Entrada: mouse, toque e teclado ----------
+    function bindEvents() {
+      window.addEventListener('resize', onResize);
+      canvas.addEventListener('pointerdown', onPointerDown, { passive: false });
+      canvas.addEventListener('pointermove', onPointerMove, { passive: false });
+      window.addEventListener('pointerup', () => { activePointer.down = false; });
+      window.addEventListener('keydown', e => {
+        keys[e.key.toLowerCase()] = true;
+        if (['arrowup','arrowdown','arrowleft','arrowright',' '].includes(e.key.toLowerCase())) e.preventDefault();
+      });
+      window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+      ui.startButton.addEventListener('click', startGame);
+      ui.restartButton.addEventListener('click', resetGame);
+      ui.sound.addEventListener('click', toggleSound);
+      ui.rankingToggle.addEventListener('click', () => {
+        const expanded = ui.ranking.classList.toggle('expanded');
+        ui.rankingToggle.setAttribute('aria-expanded', String(expanded));
+      });
+    }
+
+    function onPointerDown(e) {
+      if (!running) return;
+      e.preventDefault();
+      activePointer.down = true;
+      activePointer.type = e.pointerType;
+      canvas.setPointerCapture?.(e.pointerId);
+      setPointerTarget(e);
+    }
+
+    function onPointerMove(e) {
+      if (!running || (e.pointerType !== 'mouse' && !activePointer.down)) return;
+      e.preventDefault();
+      setPointerTarget(e);
+    }
+
+    function setPointerTarget(e) {
+      pointer.x = (e.clientX / innerWidth) * 2 - 1;
+      pointer.y = -(e.clientY / innerHeight) * 2 + 1;
+      pointerHasPosition = true;
+      projectPointerTarget();
+    }
+
+    function projectPointerTarget() {
+      raycaster.setFromCamera(pointer, camera);
+      if (raycaster.ray.intersectPlane(groundInteractionPlane, pointerHit)) {
+        pointerTarget.set(
+          clamp(pointerHit.x, -WORLD_CONFIG.width / 2, WORLD_CONFIG.width / 2),
+          0,
+          clamp(pointerHit.z, -WORLD_CONFIG.depth / 2, WORLD_CONFIG.depth / 2)
+        );
+      }
+    }
+
+    function onResize() {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setPixelRatio(Math.min(devicePixelRatio, getQualityProfile().maxPixelRatio));
+      renderer.setSize(innerWidth, innerHeight, false);
+    }
+
+    // ---------- Ciclo da partida ----------
+    function startGame() {
+      if (running) return;
+      if (audioContext?.state === 'suspended') audioContext.resume();
+      ui.startScreen.classList.add('hidden');
+      ui.endScreen.classList.add('hidden');
+      running = true;
+      ended = false;
+      startTime = performance.now();
+      playTone(220, .08, .035);
+    }
+
+    function resetHoleForMatch(hole, spawn) {
+      hole.score = 0;
+      hole.growthPoints = 0;
+      hole.radius = hole.baseRadius;
+      hole.targetRadius = hole.baseRadius;
+      hole.active = true;
+      hole.invulnerableUntil = 0;
+      hole.respawnAt = 0;
+      hole.defeatAt = 0;
+      hole.mesh.visible = true;
+      hole.mesh.scale.setScalar(hole.radius);
+      hole.mesh.position.set(spawn.x, 0, spawn.z);
+      hole.target?.copy(hole.mesh.position);
+      hole.ring.material.color.setHex(hole.color);
+      if (hole.statusRing) hole.statusRing.visible = false;
+      if (!hole.isPlayer) {
+        hole.state = BOT_STATES.WANDER;
+        hole.stateHistory = new Set([BOT_STATES.WANDER]);
+        hole.targetObject = null;
+        hole.targetHole = null;
+        hole.threatHole = null;
+        hole.lastDecisionAt = -1;
+      }
+    }
+
+    function resetGame() {
+      // Recria a cidade de forma segura e mantém o mesmo renderer.
+      spatialGrid.clear();
+      destructibles.forEach(o => {
+        scene.remove(o.mesh);
+        if (world.bodies.includes(o.body)) world.removeBody(o.body);
+      });
+      destructibles.length = 0;
+      movingEntities.length = 0;
+      vegetationEntities.length = 0;
+      sinkingEntities.length = 0;
+      scenery.forEach(o => scene.remove(o));
+      scenery.length = 0;
+      particles.forEach(p => scene.remove(p.mesh));
+      particles.length = 0;
+      qualityState.autoDowngrades = 0;
+      applyQualityTier(QUALITY_CONFIG.initialTier, 'new-match');
+      performanceMetrics.frames = 0;
+      performanceMetrics.elapsed = 0;
+      performanceMetrics.fps = 60;
+
+      score = 0;
+      resetHoleForMatch(player, HOLE_SPAWNS.player);
+      pointerTarget.copy(player.mesh.position);
+      pointerHasPosition = false;
+      activePointer.down = false;
+      ui.respawnStatus.classList.add('hidden');
+      ui.threatArrow.classList.add('hidden');
+      ui.killFeed.replaceChildren();
+      initializeCameraFollow();
+      bots.forEach((bot, i) => {
+        const spawn = HOLE_SPAWNS.bots[i];
+        resetHoleForMatch(bot, spawn);
+        bot.thinkAt = 0;
+      });
+      cityRound++;
+      createCity();
+      updateHud(GAME_DURATION);
+      updateRanking();
+      startGame();
+    }
+
+    function endGame() {
+      if (ended) return;
+      running = false;
+      ended = true;
+      ui.respawnStatus.classList.add('hidden');
+      ui.threatArrow.classList.add('hidden');
+      updateHud(0);
+      updateRanking();
+      const standings = getStandings();
+      const place = standings.findIndex(p => p.name === player.name) + 1;
+      ui.finalScore.textContent = score.toLocaleString('pt-BR');
+      ui.finalLabel.textContent = `pontos • ${place}º lugar de 6`;
+      ui.endScreen.classList.remove('hidden');
+      playTone(160, .18, .055);
+      setTimeout(() => playTone(place <= 3 ? 330 : 190, .2, .045), 130);
+    }
+
+    function animate(now = 0) {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), .04);
+      if (running) {
+        const frameNow = performance.now();
+        const elapsed = (frameNow - startTime) / 1000;
+        const remaining = Math.max(0, GAME_DURATION - elapsed);
+        if (remaining <= 0) endGame();
+        else {
+          updatePlayer(dt);
+          updateCamera(dt);
+          updateBots(dt, elapsed);
+          updateAmbientEntities(dt, frameNow / 1000);
+          updateHoleRespawns(frameNow);
+          checkHoleVsHole(frameNow);
+          checkAbsorption();
+          updateThreatIndicators(frameNow);
+          updateHud(remaining);
+          if (now - lastRankUpdate > 350) {
+            updateRanking();
+            lastRankUpdate = now;
+          }
+        }
+      }
+
+      updateSinking(dt);
+      updateParticles(dt);
+      world.step(1 / 60, dt, 2);
+      updateHoleVisuals(dt);
+      updatePerformanceMetrics(dt);
+      updateMinimap(performance.now());
+      renderer.render(scene, camera);
+    }
+
+    function updatePlayer(dt) {
+      if (!player.active) return;
+      // Reprojeta o cursor enquanto a câmera se move para preservar o controle na tela.
+      if (pointerHasPosition && (activePointer.type === 'mouse' || activePointer.down)) {
+        projectPointerTarget();
+      }
+
+      const keyboard = new THREE.Vector3(
+        (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0),
+        0,
+        (keys.s || keys.arrowdown ? 1 : 0) - (keys.w || keys.arrowup ? 1 : 0)
+      );
+
+      if (keyboard.lengthSq() > 0) {
+        keyboard.normalize().multiplyScalar(15 * dt);
+        player.mesh.position.add(keyboard);
+        pointerTarget.copy(player.mesh.position);
+      } else {
+        const delta = pointerTarget.clone().sub(player.mesh.position);
+        const maxStep = 17 * dt;
+        if (delta.length() > maxStep) delta.setLength(maxStep);
+        player.mesh.position.add(delta);
+      }
+
+      player.mesh.position.x = clamp(player.mesh.position.x, -WORLD_CONFIG.width / 2, WORLD_CONFIG.width / 2);
+      player.mesh.position.z = clamp(player.mesh.position.z, -WORLD_CONFIG.depth / 2, WORLD_CONFIG.depth / 2);
+      player.radius += (player.targetRadius - player.radius) * Math.min(1, dt * 7);
+      player.mesh.scale.setScalar(player.radius);
+    }
+
+    function updateBots(dt, elapsed) {
+      const now = performance.now();
+      bots.forEach((bot, index) => {
+        if (!bot.active) return;
+
+        if (shouldReconsiderBot(bot, elapsed)) decideBotState(bot, elapsed, now);
+        updateBotDynamicTarget(bot, elapsed, now);
+
+        const steering = bot.target.clone().sub(bot.mesh.position);
+        const separation = getBotSeparation(bot, index);
+        if (steering.lengthSq() > .001) steering.normalize();
+        steering.addScaledVector(separation, 1.8);
+        if (steering.lengthSq() > .001) {
+          const speedMultiplier = bot.state === BOT_STATES.FLEE ? 1.22 :
+            bot.state === BOT_STATES.HUNT ? 1.08 : bot.state === BOT_STATES.WANDER ? .88 : 1;
+          steering.normalize().multiplyScalar(bot.speed * speedMultiplier * dt);
+          bot.mesh.position.add(steering);
+        }
+
+        bot.mesh.position.x = clamp(bot.mesh.position.x, -WORLD_CONFIG.width / 2, WORLD_CONFIG.width / 2);
+        bot.mesh.position.z = clamp(bot.mesh.position.z, -WORLD_CONFIG.depth / 2, WORLD_CONFIG.depth / 2);
+        bot.radius += (bot.targetRadius - bot.radius) * Math.min(1, dt * 4);
+        bot.mesh.scale.setScalar(bot.radius);
+      });
+    }
+
+    function shouldReconsiderBot(bot, elapsed) {
+      const sinceLastDecision = elapsed - bot.lastDecisionAt;
+      if (elapsed >= bot.thinkAt) return true;
+      if (sinceLastDecision < .16) return false;
+      if (bot.mesh.position.distanceToSquared(bot.target) < 1.44) return true;
+      if (bot.state === BOT_STATES.FORAGE && (!bot.targetObject?.active || bot.targetObject?.sinking)) return true;
+      if (bot.state === BOT_STATES.HUNT && (!bot.targetHole?.active || isHoleProtected(bot.targetHole))) return true;
+      if (bot.state === BOT_STATES.FLEE && (!bot.threatHole?.active || isHoleProtected(bot.threatHole))) return true;
+      return false;
+    }
+
+    function decideBotState(bot, elapsed, now = performance.now()) {
+      const personality = bot.personality;
+      const threat = findBotThreat(bot, now);
+      if (threat) {
+        setBotState(bot, BOT_STATES.FLEE, { threatHole: threat });
+        setBotFleeTarget(bot, threat);
+        scheduleBotDecision(bot, elapsed);
+        return;
+      }
+
+      const prey = findBotPrey(bot, now);
+      if (prey) {
+        setBotState(bot, BOT_STATES.HUNT, { targetHole: prey });
+        bot.target.copy(prey.mesh.position);
+        scheduleBotDecision(bot, elapsed);
+        return;
+      }
+
+      const food = findBotFood(bot);
+      if (food) {
+        setBotState(bot, BOT_STATES.FORAGE, { targetObject: food });
+        bot.target.copy(food.mesh.position);
+      } else {
+        setBotState(bot, BOT_STATES.WANDER);
+        chooseBotWanderTarget(bot);
+      }
+      scheduleBotDecision(bot, elapsed);
+    }
+
+    function scheduleBotDecision(bot, elapsed) {
+      const { minDecision, maxDecision } = bot.personality;
+      bot.lastDecisionAt = elapsed;
+      bot.thinkAt = elapsed + minDecision + Math.random() * (maxDecision - minDecision);
+    }
+
+    function setBotState(bot, state, references = {}) {
+      bot.state = state;
+      bot.targetObject = references.targetObject || null;
+      bot.targetHole = references.targetHole || null;
+      bot.threatHole = references.threatHole || null;
+      bot.stateHistory.add(state);
+    }
+
+    function findBotThreat(bot, now) {
+      if (isHoleProtected(bot, now)) return null;
+      const maximumDistance = 18 + bot.personality.caution * 18;
+      let bestThreat = null;
+      let bestScore = Infinity;
+      for (const other of [player, ...bots]) {
+        if (other === bot || !other.active || isHoleProtected(other, now)) continue;
+        if (other.radius < bot.radius * PVP_CONFIG.minimumSizeAdvantage) continue;
+        const distance = distanceXZ(bot.mesh.position, other.mesh.position);
+        if (distance > maximumDistance) continue;
+        const score = distance / Math.max(1, other.radius / bot.radius);
+        if (score < bestScore) {
+          bestScore = score;
+          bestThreat = other;
+        }
+      }
+      return bestThreat;
+    }
+
+    function findBotPrey(bot, now) {
+      if (isHoleProtected(bot, now)) return null;
+      let bestPrey = null;
+      let bestScore = 10;
+      for (const other of [player, ...bots]) {
+        if (other === bot || !other.active || isHoleProtected(other, now)) continue;
+        if (bot.radius < other.radius * PVP_CONFIG.minimumSizeAdvantage) continue;
+        const distance = distanceXZ(bot.mesh.position, other.mesh.position);
+        if (distance > bot.personality.perception) continue;
+        const advantage = bot.radius / Math.max(.1, other.radius);
+        const opportunity = advantage * bot.personality.aggression * 24 - distance * .45 + other.score * .03;
+        if (opportunity > bestScore) {
+          bestScore = opportunity;
+          bestPrey = other;
+        }
+      }
+      return bestPrey;
+    }
+
+    function findBotFood(bot) {
+      const searchRadius = Math.max(WORLD_CONFIG.botSearchRadius, bot.personality.perception, bot.radius * 10);
+      const candidates = spatialGrid.queryCircle(bot.mesh.position.x, bot.mesh.position.z, searchRadius);
+      let bestFood = null;
+      let bestScore = -Infinity;
+      for (const candidate of candidates) {
+        if (bot.radius < candidate.minimumHoleRadius || candidate.radius > bot.radius * 1.15) continue;
+        const distance = distanceXZ(bot.mesh.position, candidate.mesh.position);
+        const reservations = getBotTargetReservationCount(candidate, bot);
+        const utility = candidate.value * (5 + bot.personality.collector * 5) - distance - reservations * 18;
+        if (utility > bestScore) {
+          bestScore = utility;
+          bestFood = candidate;
+        }
+      }
+      return bestFood;
+    }
+
+    function getBotTargetReservationCount(targetObject, requestingBot) {
+      return bots.reduce((count, other) => count + (
+        other !== requestingBot && other.active && other.state === BOT_STATES.FORAGE && other.targetObject === targetObject ? 1 : 0
+      ), 0);
+    }
+
+    function setBotFleeTarget(bot, threat) {
+      const away = bot.mesh.position.clone().sub(threat.mesh.position);
+      if (away.lengthSq() < .01) {
+        const angle = bots.indexOf(bot) * 1.7 + .4;
+        away.set(Math.cos(angle), 0, Math.sin(angle));
+      }
+      away.normalize();
+      const distance = 20 + bot.personality.caution * 14;
+      const side = bots.indexOf(bot) % 2 ? 1 : -1;
+      bot.target.set(
+        clamp(bot.mesh.position.x + away.x * distance + away.z * side * 4, -WORLD_CONFIG.width / 2 + 3, WORLD_CONFIG.width / 2 - 3),
+        0,
+        clamp(bot.mesh.position.z + away.z * distance - away.x * side * 4, -WORLD_CONFIG.depth / 2 + 3, WORLD_CONFIG.depth / 2 - 3)
+      );
+    }
+
+    function chooseBotWanderTarget(bot) {
+      const districtIndex = (bots.indexOf(bot) + Math.floor(Math.random() * DISTRICTS.length)) % DISTRICTS.length;
+      const district = DISTRICTS[districtIndex];
+      bot.target.set(
+        district.xMin + 4 + Math.random() * (district.xMax - district.xMin - 8),
+        0,
+        district.zMin + 4 + Math.random() * (district.zMax - district.zMin - 8)
+      );
+    }
+
+    function updateBotDynamicTarget(bot, elapsed, now) {
+      if (bot.state === BOT_STATES.HUNT) {
+        if (bot.targetHole?.active && !isHoleProtected(bot.targetHole, now)) bot.target.copy(bot.targetHole.mesh.position);
+        else bot.thinkAt = 0;
+      } else if (bot.state === BOT_STATES.FLEE) {
+        if (!bot.threatHole?.active || isHoleProtected(bot.threatHole, now)) bot.thinkAt = Math.min(bot.thinkAt, elapsed);
+      } else if (bot.state === BOT_STATES.FORAGE) {
+        if (bot.targetObject?.active && !bot.targetObject.sinking) bot.target.copy(bot.targetObject.mesh.position);
+        else bot.thinkAt = 0;
+      }
+    }
+
+    function getBotSeparation(bot, index) {
+      const separation = new THREE.Vector3();
+      for (const other of [player, ...bots]) {
+        if (other === bot || !other.active) continue;
+        const sizeRatio = bot.radius / Math.max(.1, other.radius);
+        if (sizeRatio < .75 || sizeRatio > 1.34) continue;
+        const dx = bot.mesh.position.x - other.mesh.position.x;
+        const dz = bot.mesh.position.z - other.mesh.position.z;
+        const distance = Math.hypot(dx, dz);
+        const desiredDistance = bot.radius + other.radius + 1.4;
+        if (distance >= desiredDistance) continue;
+        if (distance < .01) {
+          const angle = index * 1.9 + bots.indexOf(other) * .7;
+          separation.x += Math.cos(angle);
+          separation.z += Math.sin(angle);
+        } else {
+          const force = (desiredDistance - distance) / desiredDistance;
+          separation.x += dx / distance * force;
+          separation.z += dz / distance * force;
+        }
+      }
+      return separation;
+    }
+
+    function updateAmbientEntities(dt, time) {
+      const profile = getQualityProfile();
+      let movedPhysicsBody = false;
+      for (const entity of movingEntities) {
+        if (!entity.active || entity.sinking) continue;
+        const movement = entity.movement;
+        let moved = false;
+        const oldX = entity.mesh.position.x;
+        const oldZ = entity.mesh.position.z;
+
+        if (movement?.kind === 'traffic') {
+          const amount = movement.speed * movement.direction * dt;
+          entity.mesh.position[movement.axis] += amount;
+          if (Math.abs(entity.mesh.position[movement.axis]) > WORLD_CONFIG.width / 2 - 3) {
+            movement.direction *= -1;
+            entity.mesh.position[movement.axis] = clamp(entity.mesh.position[movement.axis], -WORLD_CONFIG.width / 2 + 3, WORLD_CONFIG.width / 2 - 3);
+            entity.mesh.rotation.y += Math.PI;
+          }
+          if (profile.decorativeMotion && !reducedMotion) {
+            entity.mesh.userData.wheels?.forEach(wheel => { wheel.rotation.z -= amount * 3.5; });
+          }
+          moved = true;
+        } else if (movement?.kind === 'pedestrian') {
+          movement.time += dt * movement.speed;
+          const travel = Math.sin(movement.time) * movement.range;
+          entity.mesh.position.x = movement.originX + Math.cos(movement.angle) * travel;
+          entity.mesh.position.z = movement.originZ + Math.sin(movement.angle) * travel;
+          const legSwing = reducedMotion || !profile.decorativeMotion ? 0 : Math.sin(movement.time * 5) * .34;
+          const legs = entity.mesh.userData.walkLegs;
+          if (legs) {
+            legs[0].rotation.x = legSwing;
+            legs[1].rotation.x = -legSwing;
+          }
+          moved = true;
+        } else if (movement?.kind === 'boat') {
+          const amount = movement.speed * movement.direction * dt;
+          entity.mesh.position.z += amount;
+          if (Math.abs(entity.mesh.position.z) > WORLD_CONFIG.depth / 2 - 4) {
+            movement.direction *= -1;
+            entity.mesh.rotation.y += Math.PI;
+          }
+          entity.mesh.rotation.z = reducedMotion || !profile.decorativeMotion ? 0 : Math.sin(time * 1.4 + entity.ambientPhase) * .025;
+          moved = true;
+        }
+
+        if (moved) {
+          spatialGrid.update(entity, oldX, oldZ);
+          entity.body.position.x = entity.mesh.position.x;
+          entity.body.position.z = entity.mesh.position.z;
+          movedPhysicsBody = true;
+        }
+      }
+      ambientFrame++;
+      if (!reducedMotion && profile.vegetationFrameStride > 0 && ambientFrame % profile.vegetationFrameStride === 0) {
+        for (const entity of vegetationEntities) {
+          if (!entity.active || entity.sinking) continue;
+          entity.mesh.rotation.z = Math.sin(time * 1.25 + entity.ambientPhase) * .025;
+          entity.mesh.rotation.x = Math.cos(time * 1.05 + entity.ambientPhase) * .012;
+        }
+      }
+      if (movedPhysicsBody && world.broadphase) world.broadphase.dirty = true;
+    }
+
+    function isHoleProtected(hole, now = performance.now()) {
+      return now < hole.invulnerableUntil;
+    }
+
+    function canHoleEat(eater, victim, now = performance.now()) {
+      if (!eater.active || !victim.active || eater === victim) return false;
+      if (isHoleProtected(eater, now) || isHoleProtected(victim, now)) return false;
+      if (eater.radius < victim.radius * PVP_CONFIG.minimumSizeAdvantage) return false;
+      const containment = Math.max(.15, eater.radius - victim.radius * .35);
+      return distanceXZ(eater.mesh.position, victim.mesh.position) < containment;
+    }
+
+    function checkHoleVsHole(now = performance.now()) {
+      const holes = [player, ...bots];
+      for (let i = 0; i < holes.length; i++) {
+        for (let j = i + 1; j < holes.length; j++) {
+          const first = holes[i];
+          const second = holes[j];
+          if (!first.active || !second.active || first.radius === second.radius) continue;
+          const eater = first.radius > second.radius ? first : second;
+          const victim = eater === first ? second : first;
+          if (canHoleEat(eater, victim, now)) onHoleEaten(eater, victim, now);
+        }
+      }
+    }
+
+    function onHoleEaten(eater, victim, now = performance.now()) {
+      if (!victim.active) return;
+      const bonus = PVP_CONFIG.baseBonus + Math.round(victim.score * PVP_CONFIG.scoreTransfer);
+      const growthReward = Math.min(30, 8 + victim.growthPoints * .2);
+      const defeatPosition = victim.mesh.position.clone();
+
+      awardHolePoints(eater, bonus, growthReward);
+      victim.growthPoints *= 1 - PVP_CONFIG.growthLoss;
+      updateHoleTargetRadius(victim);
+      victim.active = false;
+      victim.defeatAt = now;
+      victim.respawnAt = now + PVP_CONFIG.respawnDelay * 1000;
+      victim.invulnerableUntil = 0;
+      victim.mesh.visible = true;
+
+      spawnParticles(defeatPosition, eater.color, 12);
+      showToast(`${eater.name} ENGOLIU ${victim.name}`);
+      addKillEvent(eater, victim);
+      updateRanking();
+
+      if (victim.isPlayer) {
+        activePointer.down = false;
+        ui.respawnStatus.classList.remove('hidden');
+        ui.respawnCount.textContent = String(PVP_CONFIG.respawnDelay);
+        playTone(115, .22, .06);
+      } else if (eater.isPlayer) {
+        holePulse = 1;
+        playTone(430, .12, .045);
+      }
+    }
+
+    function updateHoleRespawns(now = performance.now()) {
+      for (const hole of [player, ...bots]) {
+        if (hole.active) continue;
+        const defeatProgress = Math.min(1, Math.max(0, (now - hole.defeatAt) / 450));
+        if (defeatProgress < 1) {
+          hole.mesh.visible = true;
+          hole.mesh.scale.setScalar(hole.radius * (1 - defeatProgress));
+        } else {
+          hole.mesh.visible = false;
+        }
+
+        if (hole.isPlayer) {
+          const seconds = Math.max(1, Math.ceil((hole.respawnAt - now) / 1000));
+          ui.respawnCount.textContent = String(seconds);
+        }
+        if (now >= hole.respawnAt) respawnHole(hole, now);
+      }
+    }
+
+    function getSafeSpawnPoint(hole) {
+      const margin = 10;
+      const candidates = [
+        hole.spawnPoint,
+        HOLE_SPAWNS.player,
+        ...HOLE_SPAWNS.bots
+      ].map(point => ({ x: point.x, z: point.z }));
+
+      for (let i = 0; i < 12; i++) {
+        candidates.push({
+          x: (Math.random() - .5) * (WORLD_CONFIG.width - margin * 2),
+          z: (Math.random() - .5) * (WORLD_CONFIG.depth - margin * 2)
+        });
+      }
+
+      const threats = [player, ...bots].filter(other => other !== hole && other.active);
+      let best = candidates[0];
+      let bestScore = -Infinity;
+      for (const candidate of candidates) {
+        const nearestThreat = threats.length
+          ? Math.min(...threats.map(threat => Math.hypot(candidate.x - threat.mesh.position.x, candidate.z - threat.mesh.position.z) - threat.radius * 2))
+          : 999;
+        const nearbyObjects = spatialGrid.queryCircle(candidate.x, candidate.z, 4).length;
+        const candidateScore = nearestThreat - nearbyObjects * 3;
+        if (candidateScore > bestScore) {
+          bestScore = candidateScore;
+          best = candidate;
+        }
+      }
+      return best;
+    }
+
+    function respawnHole(hole, now = performance.now()) {
+      const spawn = getSafeSpawnPoint(hole);
+      hole.radius = hole.targetRadius;
+      hole.active = true;
+      hole.respawnAt = 0;
+      hole.defeatAt = 0;
+      hole.invulnerableUntil = now + PVP_CONFIG.spawnProtection * 1000;
+      hole.mesh.visible = true;
+      hole.mesh.position.set(spawn.x, 0, spawn.z);
+      hole.mesh.scale.setScalar(hole.radius);
+      hole.target?.copy(hole.mesh.position);
+      spawnParticles(hole.mesh.position, hole.color, 8);
+
+      if (hole.isPlayer) {
+        pointerHasPosition = false;
+        pointerTarget.copy(hole.mesh.position);
+        ui.respawnStatus.classList.add('hidden');
+        initializeCameraFollow();
+        showToast('DE VOLTA! 2s DE PROTEÇÃO');
+        playTone(330, .12, .035);
+      } else {
+        hole.state = BOT_STATES.WANDER;
+        hole.stateHistory.add(BOT_STATES.WANDER);
+        hole.targetObject = null;
+        hole.targetHole = null;
+        hole.threatHole = null;
+        hole.lastDecisionAt = -1;
+        hole.thinkAt = 0;
+      }
+    }
+
+    function checkAbsorption() {
+      // Jogador consulta apenas as células que interceptam sua área de absorção.
+      if (player.active) {
+        const playerCandidates = spatialGrid.queryCircle(
+          player.mesh.position.x,
+          player.mesh.position.z,
+          player.radius
+        );
+        for (const obj of playerCandidates) {
+          const pd = distanceXZ(player.mesh.position, obj.mesh.position);
+          const playerCanEat = player.radius >= obj.minimumHoleRadius && obj.radius <= player.radius * 1.35 && pd < player.radius * .82;
+          if (playerCanEat) {
+            beginSwallow(obj, player);
+          }
+        }
+      }
+
+      // Cada bot repete a mesma consulta local; objetos já escolhidos saem da grade.
+      for (const bot of bots) {
+        if (!bot.active) continue;
+        const botCandidates = spatialGrid.queryCircle(
+          bot.mesh.position.x,
+          bot.mesh.position.z,
+          bot.radius
+        );
+        for (const obj of botCandidates) {
+          if (!obj.active || obj.sinking) continue;
+          const bd = distanceXZ(bot.mesh.position, obj.mesh.position);
+          const botCanEat = bot.radius >= obj.minimumHoleRadius && obj.radius <= bot.radius * 1.15 && bd < bot.radius * .68;
+          if (botCanEat) {
+            beginSwallow(obj, bot);
+          }
+        }
+      }
+    }
+
+    function updateHoleTargetRadius(hole) {
+      hole.targetRadius = hole.baseRadius + Math.sqrt(Math.max(0, hole.growthPoints)) * hole.growthScale;
+    }
+
+    function awardHolePoints(hole, points, growth = points) {
+      hole.score += points;
+      hole.growthPoints += growth;
+      updateHoleTargetRadius(hole);
+      if (hole.isPlayer) score = hole.score;
+    }
+
+    function beginSwallow(obj, eater) {
+      obj.sinking = true;
+      obj.eater = eater;
+      obj.sinkT = 0;
+      obj.sinkTarget = eater.mesh.position.clone();
+      spatialGrid.remove(obj);
+      world.removeBody(obj.body);
+      sinkingEntities.push(obj);
+
+      awardHolePoints(eater, obj.value);
+
+      if (eater.isPlayer) {
+        showToast(`+${obj.value} ${obj.type.toUpperCase()}`);
+        spawnParticles(obj.mesh.position, player.color, Math.min(10, 4 + obj.value));
+        playTone(255 + Math.min(240, score * 2), .06, .025);
+        holePulse = 1;
+      } else {
+        if (!reducedMotion && Math.random() > .45) spawnParticles(obj.mesh.position, eater.color, 3);
+      }
+    }
+
+    function updateSinking(dt) {
+      for (let i = sinkingEntities.length - 1; i >= 0; i--) {
+        const obj = sinkingEntities[i];
+        if (!obj.sinking || !obj.active) {
+          sinkingEntities.splice(i, 1);
+          continue;
+        }
+        obj.sinkT += dt * (obj.value >= 12 ? 1.3 : 2.7);
+        const t = Math.min(1, obj.sinkT);
+        const eaterPos = obj.eater.active ? obj.eater.mesh.position : obj.sinkTarget;
+        obj.mesh.position.x += (eaterPos.x - obj.mesh.position.x) * dt * 5;
+        obj.mesh.position.z += (eaterPos.z - obj.mesh.position.z) * dt * 5;
+        obj.mesh.position.y = -Math.pow(t, 1.45) * (obj.height + .8);
+        obj.mesh.rotation.y += dt * (obj.value >= 12 ? 1.2 : 3.5);
+        obj.mesh.rotation.x += dt * (obj.value >= 12 ? .7 : 2.1);
+        obj.mesh.rotation.z += dt * Math.sin(t * Math.PI * 4) * 1.4;
+        obj.mesh.scale.setScalar(Math.max(.04, 1 - t * .88));
+        if (t >= 1) {
+          obj.active = false;
+          scene.remove(obj.mesh);
+          sinkingEntities.splice(i, 1);
+        }
+      }
+    }
+
+    function updateHoleVisuals(dt) {
+      holePulse = Math.max(0, holePulse - dt * 3.8);
+      const now = performance.now();
+      [player, ...bots].forEach((hole, index) => {
+        const protectedNow = isHoleProtected(hole, now);
+        const ambientPulse = reducedMotion ? 1 : 1 + Math.sin(now * .005 + index) * .025;
+        const playerBoost = hole.isPlayer ? holePulse * .08 : 0;
+        const protectionPulse = protectedNow && !reducedMotion ? .1 + Math.sin(now * .018) * .05 : 0;
+        hole.ring.scale.setScalar(ambientPulse + playerBoost + protectionPulse);
+        hole.ring.material.opacity = protectedNow ? .98 : .84 + playerBoost;
+        hole.ring.material.color.setHex(protectedNow ? 0xffffff : hole.color);
+        if (hole.aura) {
+          if (!reducedMotion) hole.aura.rotation.z += dt * (index % 2 ? -.9 : .9);
+          hole.aura.scale.setScalar(1.17 + (reducedMotion ? 0 : Math.sin(now * .006 + index) * .045));
+          hole.aura.material.opacity = protectedNow ? .55 : .28 + playerBoost * .4;
+        }
+      });
+    }
+
+    function updateThreatIndicators(now = performance.now()) {
+      if (now - lastIndicatorUpdate < getQualityProfile().indicatorInterval) return;
+      lastIndicatorUpdate = now;
+      let closestThreat = null;
+      let closestDistance = Infinity;
+
+      for (const bot of bots) {
+        if (bot.statusRing) bot.statusRing.visible = false;
+        if (!player.active || !bot.active || isHoleProtected(player, now) || isHoleProtected(bot, now)) continue;
+        const distance = distanceXZ(player.mesh.position, bot.mesh.position);
+        const playerCanEat = player.radius >= bot.radius * PVP_CONFIG.minimumSizeAdvantage;
+        const botCanEat = bot.radius >= player.radius * PVP_CONFIG.minimumSizeAdvantage;
+
+        if (playerCanEat && distance < 42) {
+          bot.statusRing.visible = true;
+          bot.statusRing.material.color.setHex(0x3cff76);
+        } else if (botCanEat && distance < 50) {
+          bot.statusRing.visible = true;
+          bot.statusRing.material.color.setHex(0xff3f52);
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestThreat = bot;
+          }
+        }
+      }
+
+      if (!closestThreat || !player.active) {
+        ui.threatArrow.classList.add('hidden');
+        return;
+      }
+
+      indicatorProjection.copy(closestThreat.mesh.position).project(camera);
+      const rawX = (indicatorProjection.x * .5 + .5) * innerWidth;
+      const rawY = (-indicatorProjection.y * .5 + .5) * innerHeight;
+      const centerX = innerWidth / 2;
+      const centerY = innerHeight / 2;
+      const dx = rawX - centerX;
+      const dy = rawY - centerY;
+      const scaleX = (innerWidth / 2 - 44) / Math.max(1, Math.abs(dx));
+      const scaleY = (innerHeight / 2 - 76) / Math.max(1, Math.abs(dy));
+      const edgeScale = Math.min(1, scaleX, scaleY);
+      const x = centerX + dx * edgeScale;
+      const y = centerY + dy * edgeScale;
+      const angle = Math.atan2(dy, dx) + Math.PI / 2;
+
+      ui.threatArrow.style.left = `${x}px`;
+      ui.threatArrow.style.top = `${y}px`;
+      ui.threatArrow.style.transform = `translate(-50%, -50%) rotate(${angle}rad)`;
+      ui.threatArrow.setAttribute('aria-label', `${closestThreat.name} é maior e está próximo`);
+      ui.threatArrow.classList.remove('hidden');
+    }
+
+    function updateMinimap(now = performance.now()) {
+      if (now - lastMinimapUpdate < getQualityProfile().minimapInterval) return;
+      lastMinimapUpdate = now;
+      const ctx = minimapContext;
+      const width = ui.minimap.width;
+      const height = ui.minimap.height;
+      const mapX = x => (x + WORLD_CONFIG.width / 2) / WORLD_CONFIG.width * width;
+      const mapY = z => (z + WORLD_CONFIG.depth / 2) / WORLD_CONFIG.depth * height;
+      const districtColors = {
+        residential: '#20ac55', downtown: '#43516c', park: '#007f3e', industrial: '#344154', marina: '#c88f22'
+      };
+
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = '#087bb5';
+      ctx.fillRect(0, 0, width, height);
+      DISTRICTS.forEach(district => {
+        ctx.fillStyle = districtColors[district.id];
+        ctx.fillRect(
+          mapX(district.xMin),
+          mapY(district.zMin),
+          mapX(district.xMax) - mapX(district.xMin),
+          mapY(district.zMax) - mapY(district.zMin)
+        );
+      });
+
+      ctx.fillStyle = '#18283d';
+      WORLD_CONFIG.verticalRoads.forEach(x => ctx.fillRect(mapX(x - WORLD_CONFIG.roadWidth / 2), 0, WORLD_CONFIG.roadWidth / WORLD_CONFIG.width * width, height));
+      WORLD_CONFIG.horizontalRoads.forEach(z => ctx.fillRect(0, mapY(z - WORLD_CONFIG.roadWidth / 2), width, WORLD_CONFIG.roadWidth / WORLD_CONFIG.depth * height));
+
+      for (const hole of bots) {
+        if (!hole.active) continue;
+        ctx.beginPath();
+        ctx.fillStyle = `#${hole.color.toString(16).padStart(6, '0')}`;
+        ctx.arc(mapX(hole.mesh.position.x), mapY(hole.mesh.position.z), 3.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (player.active) {
+        ctx.beginPath();
+        ctx.fillStyle = '#ffffff';
+        ctx.arc(mapX(player.mesh.position.x), mapY(player.mesh.position.z), 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.fillStyle = '#13e6d1';
+        ctx.arc(mapX(player.mesh.position.x), mapY(player.mesh.position.z), 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function addKillEvent(eater, victim) {
+      const item = document.createElement('li');
+      item.className = 'kill-event';
+      const winner = document.createElement('strong');
+      winner.textContent = eater.name;
+      item.append(winner, document.createTextNode(` engoliu ${victim.name}`));
+      ui.killFeed.prepend(item);
+      while (ui.killFeed.children.length > 4) ui.killFeed.lastElementChild.remove();
+      setTimeout(() => item.remove(), 4200);
+    }
+
+    // ---------- Partículas, som e interface ----------
+    function spawnParticles(position, color, count) {
+      if (reducedMotion) count = Math.min(2, count);
+      const profile = getQualityProfile();
+      count = Math.ceil(count * profile.particleSpawnScale);
+      count = Math.min(count, Math.max(0, profile.particleLimit - particles.length));
+      for (let i = 0; i < count; i++) {
+        const particleMesh = new THREE.Mesh(geometries.particle, getParticleMaterial(color));
+        particleMesh.position.copy(position).add(new THREE.Vector3(0, .25, 0));
+        scene.add(particleMesh);
+        particles.push({
+          mesh: particleMesh,
+          velocity: new THREE.Vector3((Math.random() - .5) * 4, 2 + Math.random() * 3, (Math.random() - .5) * 4),
+          life: .55 + Math.random() * .35
+        });
+      }
+    }
+
+    function updateParticles(dt) {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.life -= dt;
+        p.velocity.y -= 8 * dt;
+        p.mesh.position.addScaledVector(p.velocity, dt);
+        p.mesh.rotation.x += dt * 5;
+        p.mesh.scale.setScalar(Math.max(.05, Math.min(1, p.life * 1.7)));
+        if (p.life <= 0) {
+          scene.remove(p.mesh);
+          particles.splice(i, 1);
+        }
+      }
+    }
+
+    function showToast(text) {
+      ui.toast.textContent = text;
+      ui.toast.classList.remove('show');
+      clearTimeout(toastTimer);
+      requestAnimationFrame(() => ui.toast.classList.add('show'));
+      toastTimer = setTimeout(() => ui.toast.classList.remove('show'), 520);
+    }
+
+    function playTone(frequency, duration, volume) {
+      if (!soundEnabled) return;
+      try {
+        audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(frequency * 1.22, audioContext.currentTime + duration);
+        gain.gain.setValueAtTime(volume, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(.0001, audioContext.currentTime + duration);
+        oscillator.connect(gain).connect(audioContext.destination);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + duration);
+      } catch (_) { /* O jogo continua normalmente se o navegador bloquear áudio. */ }
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      ui.sound.textContent = soundEnabled ? '🔊' : '🔇';
+      ui.sound.setAttribute('aria-label', soundEnabled ? 'Desativar sons' : 'Ativar sons');
+      ui.sound.setAttribute('aria-pressed', String(!soundEnabled));
+      if (soundEnabled) playTone(330, .06, .025);
+    }
+
+    function getNextObjectUnlock(radius) {
+      let next = null;
+      for (const definition of OBJECT_CATALOG) {
+        if (definition.minimumHoleRadius <= radius + .02) continue;
+        if (!next || definition.minimumHoleRadius < next.minimumHoleRadius) next = definition;
+      }
+      return next;
+    }
+
+    function updateHud(remaining) {
+      const totalSeconds = Math.ceil(remaining);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      ui.timer.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      ui.timerStat.classList.toggle('warning', remaining <= 30 && remaining > 10);
+      ui.timerStat.classList.toggle('danger', remaining <= 10);
+      ui.score.textContent = score.toLocaleString('pt-BR');
+      ui.size.textContent = `RAIO ${player.radius.toFixed(1).replace('.', ',')} m`;
+
+      const currentThreshold = Math.floor(player.growthPoints / 10) * 10;
+      const segment = player.growthPoints - currentThreshold;
+      ui.progress.style.width = `${Math.min(100, segment * 10)}%`;
+      const nextUnlock = getNextObjectUnlock(player.radius);
+      ui.next.textContent = nextUnlock
+        ? `LIBERA ${nextUnlock.type.toUpperCase()} ${nextUnlock.minimumHoleRadius.toFixed(1).replace('.', ',')}m`
+        : 'TUDO LIBERADO';
+    }
+
+    function getStandings() {
+      return [player, ...bots].map(p => ({ name: p.name, score: p.score })).sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+    }
+
+    function updateRanking() {
+      const standings = getStandings();
+      ui.rankingList.replaceChildren(...standings.map((entry, index) => {
+        const li = document.createElement('li');
+        li.className = `ranking-row${entry.name === player.name ? ' player' : ''}`;
+        li.innerHTML = `<span class="rank-number">${index + 1}</span><span class="rank-name">${entry.name}</span><span class="rank-score">${entry.score}</span>`;
+        return li;
+      }));
+    }
+
+    function distanceXZ(a, b) { return Math.hypot(a.x - b.x, a.z - b.z); }
+    function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+
+    // Se as bibliotecas CDN falharem, exibimos uma orientação simples em vez de uma tela vazia.
+    if (window.THREE && window.CANNON) {
+      init();
+    } else {
+      ui.loading.textContent = 'Não foi possível carregar o jogo. Verifique sua internet e recarregue a página.';
+      ui.loading.style.color = 'white';
+    }
+  </script>
+</body>
+</html>
