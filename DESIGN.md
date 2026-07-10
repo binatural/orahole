@@ -90,6 +90,20 @@ Transições de 150–250 ms para estados da interface. Partículas e pulsos res
 
 No desktop, placar à esquerda e ranking à direita. No celular, placar compacto no topo, ranking recolhido e instruções próximas à base sem bloquear o controle por toque. O renderer limita pixel ratio e resolução de sombras por perfil para manter desempenho.
 
+## Mobile Controls
+
+- Em dispositivos com ponteiro grosso, tocar na área livre cria um joystick flutuante translúcido no ponto do toque.
+- O deslocamento do botão interno controla direção e intensidade; uma zona morta central evita movimento acidental.
+- Soltar o dedo, perder foco, trocar de aba ou ser engolido cancela o joystick imediatamente.
+- Mouse continua usando destino no plano 3D e teclado mantém WASD/setas; os três métodos são independentes.
+- O joystick possui área visual de 112 px, não recebe eventos próprios e respeita o HUD e as áreas seguras do aparelho.
+
+## Render Stability
+
+- O foco da luz direcional é alinhado à grade de texels do mapa de sombras para reduzir cintilação durante o acompanhamento da câmera.
+- `normalBias`, `bias`, distância da câmera de sombra e raio de filtragem são limitados para evitar acne e instabilidade.
+- Terrenos de bairro, ruas e faixas usam `polygonOffset` em camadas distintas para evitar z-fighting em ângulos inclinados.
+
 ## Adaptive Quality
 
 - O perfil inicial considera formato móvel, memória informada pelo navegador e quantidade de núcleos disponíveis.
